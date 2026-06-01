@@ -188,6 +188,30 @@ app.post('/api/v1/user/portfolio/add', async (req, res) => {
   }
 });
 
+// GET /api/v1/user/portfolio/list
+app.get('/api/v1/user/portfolio/list', async (req, res) => {
+  const { user_id } = req.query; // e.g., ?user_id=usr_prod_101_lucid
+
+  if (!user_id) {
+    return res.status(400).json({ error: "USER_ID_REQUIRED" });
+  }
+
+  try {
+    // Perform a relational JOIN to match wallet listings with core card details
+    const walletListSql = `
+      SELECT uw.wallet_entry_id, c.card_id, c.bank_id, c.card_name, c.card_type, c.card_network 
+      FROM user_wallets uw
+      JOIN cards c ON uw.card_id = c.card_id
+      WHERE uw.user_id = ?
+    `;
+    const rows = await dbQuery(walletListSql, [user_id]);
+    return res.json(rows);
+  } catch (err) {
+    console.error("Fetch Portfolio Error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Lucid Core Engine server running on port ${port}`);
 });
