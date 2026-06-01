@@ -154,6 +154,40 @@ app.get('/api/v1/cards/search', async (req, res) => {
   }
 });
 
+// POST /api/v1/user/portfolio/add
+app.post('/api/v1/user/portfolio/add', async (req, res) => {
+  const { user_id, card_id } = req.body;
+
+  if (!user_id || !card_id) {
+    return res.status(400).json({ error: "MISSING_REQUIRED_PARAMETERS" });
+  }
+
+  try {
+    // Dynamically ensure user exists in the database to satisfy foreign keys
+    const userCheckSql = `SELECT user_id FROM users WHERE user_id = ?`;
+    const users = await dbQuery(userCheckSql, [user_id]);
+    if (users.length === 0) {
+      const userInsertSql = `INSERT INTO users (user_id, email_address, password_hash) VALUES (?, ?, ?)`;
+      await dbQuery(userInsertSql, [user_id, `${user_id}@lucid.com`, 'hash_placeholder']);
+    }
+
+    // Insert the selection into our local user_wallets link table
+    const walletInsertSql = `
+      INSERT INTO user_wallets (user_id, card_id) VALUES (?, ?)
+      ON CONFLICT(user_id, card_id) DO NOTHING
+    `;
+    await dbQuery(walletInsertSql, [user_id, card_id]);
+
+    return res.json({ 
+      success: true, 
+      message: "CARD_SUCCESSFULLY_PROVISIONED"
+    });
+  } catch (err) {
+    console.error("Portfolio Provisioning Error:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Lucid Core Engine server running on port ${port}`);
 });
