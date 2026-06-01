@@ -1,6 +1,12 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Enable CORS middleware
+app.use(cors({
+  origin: 'http://localhost:3001'
+}));
 
 // Enable JSON middleware parsing
 app.use(express.json());
