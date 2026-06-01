@@ -1,0 +1,14 @@
+{
+  "name": "lucid-core-engine",
+  "version": "1.0.0",
+  "description": "Lucid Core Credit Card Optimization Engine",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
+  }
+}
