@@ -92,6 +92,26 @@ app.post('/api/v1/engine/evaluate', async (req, res) => {
   }
 });
 
+// GET /api/v1/cards/search
+app.get('/api/v1/cards/search', async (req, res) => {
+  const { query } = req.query; // e.g., ?query=Cashback
+  
+  try {
+    const cardSearchQuery = `
+      SELECT card_id, bank_id, card_name, card_type 
+      FROM cards 
+      WHERE card_name ILIKE $1 AND is_active = TRUE
+    `;
+    const result = await pool.query(cardSearchQuery, [`%${query}%`]);
+    
+    // Return clean data array to your frontend dashboard
+    return res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Card Search Error:", error);
+    return res.status(500).json({ error: "SEARCH_FETCH_FAILED" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Lucid Core Engine server running on port ${port}`);
 });
