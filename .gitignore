@@ -1,0 +1,27 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Databases / Logs
+*.db
+*.db-journal
+*.log
+*.sqlite
+
+# Python virtual environment
+.venv/
+venv/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDEs and System files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,54 @@
+name: Lucid CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+          # Fallback to no-cache if lockfile is missing (as in initial setup)
+          
+      - name: Install Node Dependencies
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          else
+            npm init -y
+            npm install express pg
+          fi
+
+      - name: Verify Node Server Syntax
+        run: node --check server.js
+
+  python-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pypdf google-genai
+
+      - name: Check Python Syntax
+        run: |
+          python -m py_compile database.py mcc_resolution.py pipeline.py main.py ledger_optimization.py init_db.py
