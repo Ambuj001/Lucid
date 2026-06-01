@@ -1,16 +1,52 @@
 const express = require('express');
-const { Pool } = require('pg');
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Enable JSON middleware parsing
 app.use(express.json());
 
-// Production PostgreSQL Connection Pool Configuration
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+// Determine database dialect based on env
+const usePostgres = process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres');
+
+let pool;
+let sqliteDb;
+
+if (usePostgres) {
+  const { Pool } = require('pg');
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  });
+  console.log("Using PostgreSQL database connection pool.");
+} else {
+  const sqlite3 = require('sqlite3').verbose();
+  sqliteDb = new sqlite3.Database('lucid_production.db');
+  console.log("Using local SQLite database: lucid_production.db");
+}
+
+// Unified query wrapper supporting both dialects
+async function dbQuery(sql, params = []) {
+  if (usePostgres) {
+    let pgSql = sql;
+    let idx = 1;
+    while (pgSql.includes('?')) {
+      pgSql = pgSql.replace('?', `$${idx}`);
+      idx++;
+    }
+    const result = await pool.query(pgSql, params);
+    return result.rows;
+  } else {
+    // Map PostgreSQL boolean operators to SQLite numbers
+    let sqliteSql = sql.replace(/is_active\s*=\s*TRUE/g, "is_active = 1")
+                       .replace(/is_completely_excluded\s*=\s*FALSE/g, "is_completely_excluded = 0");
+    return new Promise((resolve, reject) => {
+      sqliteDb.all(sqliteSql, params, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+  }
+}
 
 // Evaluate route handler
 app.post('/api/v1/engine/evaluate', async (req, res) => {
@@ -23,7 +59,6 @@ app.post('/api/v1/engine/evaluate', async (req, res) => {
 
   try {
     // 1. Resolve domain string to target MCC and look for standard platform surcharges
-    // (In production, replace this static dictionary query with a direct call to your mcc_directory table)
     let mcc_code = "5310"; // Default to general online retail
     let surcharge_pct = 0.00;
 
@@ -36,10 +71,10 @@ app.post('/api/v1/engine/evaluate', async (req, res) => {
 
     // 2. Fetch the cards currently active inside this specific user's manual wallet
     const userWalletQuery = `
-      SELECT card_id FROM user_wallets WHERE user_id = $1
+      SELECT card_id FROM user_wallets WHERE user_id = ?
     `;
-    const walletResult = await pool.query(userWalletQuery, [user_id]);
-    const userCardIds = walletResult.rows.map(row => row.card_id);
+    const walletRows = await dbQuery(userWalletQuery, [user_id]);
+    const userCardIds = walletRows.map(row => row.card_id);
 
     if (userCardIds.length === 0) {
       return res.status(200).json({
@@ -50,16 +85,17 @@ app.post('/api/v1/engine/evaluate', async (req, res) => {
     }
 
     // 3. Query your master reward rules for the identified category and cards
+    const placeholders = userCardIds.map(() => '?').join(',');
     const rulesQuery = `
       SELECT r.*, c.card_name, c.card_type
       FROM reward_rules r
       JOIN cards c ON r.card_id = c.card_id
-      WHERE r.card_id = ANY($1) AND r.mcc_code = $2 AND r.is_completely_excluded = FALSE
+      WHERE r.card_id IN (${placeholders}) AND r.mcc_code = ? AND r.is_completely_excluded = FALSE
     `;
-    const rulesResult = await pool.query(rulesQuery, [userCardIds, mcc_code]);
+    const rulesRows = await dbQuery(rulesQuery, [...userCardIds, mcc_code]);
 
     // 4. Compute exact mathematical net yields
-    const recommendations = rulesResult.rows.map(rule => {
+    const recommendations = rulesRows.map(rule => {
       const base_yield = parseFloat(rule.base_reward_percentage);
       const net_yield = base_yield - surcharge_pct;
       const transaction_value = declared_transaction_value_inr ? parseFloat(declared_transaction_value_inr) : 0;
@@ -100,12 +136,12 @@ app.get('/api/v1/cards/search', async (req, res) => {
     const cardSearchQuery = `
       SELECT card_id, bank_id, card_name, card_type 
       FROM cards 
-      WHERE card_name ILIKE $1 AND is_active = TRUE
+      WHERE card_name LIKE ? AND is_active = TRUE
     `;
-    const result = await pool.query(cardSearchQuery, [`%${query}%`]);
+    const rows = await dbQuery(cardSearchQuery, [`%${query || ''}%`]);
     
     // Return clean data array to your frontend dashboard
-    return res.status(200).json(result.rows);
+    return res.status(200).json(rows);
   } catch (error) {
     console.error("Card Search Error:", error);
     return res.status(500).json({ error: "SEARCH_FETCH_FAILED" });

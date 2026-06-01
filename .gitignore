@@ -17,7 +17,7 @@ venv/
 ENV/
 __pycache__/
 *.pyc
-*.pyo
+*.p
 *.pyd
 
 # IDEs and System files
