@@ -1,4 +1,4 @@
--- Lucid Core Production Database Initialization
+-- Cardwise Core Production Database Initialization
 -- Strict 0-approximation data architecture
 
 -- 1. Master Bank Directory
@@ -14,7 +14,7 @@ CREATE TABLE cards (
     card_id VARCHAR(100) PRIMARY KEY, -- e.g., 'in_hdfc_infinia_metal', 'in_sbi_cashback_credit'
     bank_id VARCHAR(50) REFERENCES banks(bank_id) ON DELETE RESTRICT,
     card_name VARCHAR(150) NOT NULL,
-    card_type VARCHAR(20) NOT NULL CHECK (card_type IN ('CREDIT', 'DEBIT')),
+    card_type VARCHAR(20) NOT NULL CHECK (card_type IN ('CREDIT', 'DEBIT', 'FOREX')),
     card_network VARCHAR(20) NOT NULL CHECK (card_network IN ('VISA', 'MASTERCARD', 'RUPAY', 'AMEX')),
     joining_fee_inr NUMERIC(10, 2) DEFAULT 0.00,
     annual_fee_inr NUMERIC(10, 2) DEFAULT 0.00,
@@ -73,3 +73,22 @@ CREATE TABLE active_flash_deals (
     discovered_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
+
+-- 8. User Financial Profiles for AI Recommendation and Planning
+CREATE TABLE user_financial_profiles (
+    user_id VARCHAR(100) PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+    age INTEGER NOT NULL,
+    annual_income_inr NUMERIC(15, 2) NOT NULL,
+    reward_goal VARCHAR(20) NOT NULL CHECK (reward_goal IN ('CASHBACK', 'AIRMILES', 'HOTEL_POINTS', 'MAX_YIELD')),
+    spend_dining_inr NUMERIC(10, 2) DEFAULT 0.00,
+    spend_grocery_inr NUMERIC(10, 2) DEFAULT 0.00,
+    spend_shopping_inr NUMERIC(10, 2) DEFAULT 0.00,
+    spend_utilities_inr NUMERIC(10, 2) DEFAULT 0.00,
+    spend_travel_inr NUMERIC(10, 2) DEFAULT 0.00,
+    spend_fuel_inr NUMERIC(10, 2) DEFAULT 0.00,
+    spend_insurance_inr NUMERIC(10, 2) DEFAULT 0.00,
+    spend_rent_inr NUMERIC(10, 2) DEFAULT 0.00,
+    spend_others_inr NUMERIC(10, 2) DEFAULT 0.00,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+

@@ -7,7 +7,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        lucid: {
+        cardwise: {
           bg: "#000000",
           surface: "#0A0A0A",
           border: "#262626",

@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface LucidCardMetadata {
+interface CardwiseCardMetadata {
   card_id: string;
   bank_name: string;
   card_variant: string;
@@ -9,7 +9,7 @@ interface LucidCardMetadata {
 }
 
 interface WalletDeckProps {
-  activeUserCards: LucidCardMetadata[];
+  activeUserCards: CardwiseCardMetadata[];
 }
 
 export const WalletDeckComponent: React.FC<WalletDeckProps> = ({ activeUserCards }) => {
@@ -18,7 +18,7 @@ export const WalletDeckComponent: React.FC<WalletDeckProps> = ({ activeUserCards
       {/* Structural Header Layout Block */}
       <div className="border-b border-zinc-800 pb-6 mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold tracking-tighter uppercase text-white">LUCID // ASSET_PORTFOLIO</h1>
+          <h1 className="text-2xl font-bold tracking-tighter uppercase text-white">CARDWISE // ASSET_PORTFOLIO</h1>
           <p className="text-xs text-zinc-400 mt-1 uppercase tracking-widest">Manual card matrix authorization configuration</p>
         </div>
         <button className="bg-white hover:bg-[#FF2E93] hover:text-white text-black font-bold uppercase text-xs px-4 py-2 tracking-tight transition-colors duration-150 border border-white rounded-none">

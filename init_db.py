@@ -1,7 +1,7 @@
 import sqlite3
 
 def init_db():
-    conn = sqlite3.connect("lucid_production.db")
+    conn = sqlite3.connect("cardwise_production.db")
     cursor = conn.cursor()
 
     # Enable foreign keys
@@ -23,7 +23,7 @@ def init_db():
         card_id TEXT PRIMARY KEY, -- e.g., 'in_hdfc_infinia_metal', 'in_sbi_cashback_credit'
         bank_id TEXT REFERENCES banks(bank_id) ON DELETE RESTRICT,
         card_name TEXT NOT NULL,
-        card_type TEXT NOT NULL CHECK (card_type IN ('CREDIT', 'DEBIT')),
+        card_type TEXT NOT NULL CHECK (card_type IN ('CREDIT', 'DEBIT', 'FOREX')),
         card_network TEXT NOT NULL CHECK (card_network IN ('VISA', 'MASTERCARD', 'RUPAY', 'AMEX')),
         joining_fee_inr REAL DEFAULT 0.00,
         annual_fee_inr REAL DEFAULT 0.00,
@@ -94,9 +94,46 @@ def init_db():
     );
     """)
 
+    # 8. Corporate Flash Deals Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS corporate_flash_deals (
+        deal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source_x_profile TEXT NOT NULL,
+        target_merchant TEXT NOT NULL,
+        deal_headline TEXT NOT NULL,
+        raw_copied_text TEXT NOT NULL,
+        coupon_code TEXT DEFAULT 'NOT_REQUIRED',
+        expires_at TEXT NOT NULL,
+        deal_category TEXT DEFAULT 'GENERAL',
+        yield_pct REAL DEFAULT 0.0,
+        is_top_pick INTEGER DEFAULT 0,
+        card_type TEXT DEFAULT 'CREDIT'
+    );
+    """)
+
+    # 9. User Financial Profiles for AI Recommendation and Planning
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_financial_profiles (
+        user_id TEXT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+        age INTEGER NOT NULL,
+        annual_income_inr REAL NOT NULL,
+        reward_goal TEXT NOT NULL CHECK (reward_goal IN ('CASHBACK', 'AIRMILES', 'HOTEL_POINTS', 'MAX_YIELD')),
+        spend_dining_inr REAL DEFAULT 0.00,
+        spend_grocery_inr REAL DEFAULT 0.00,
+        spend_shopping_inr REAL DEFAULT 0.00,
+        spend_utilities_inr REAL DEFAULT 0.00,
+        spend_travel_inr REAL DEFAULT 0.00,
+        spend_fuel_inr REAL DEFAULT 0.00,
+        spend_insurance_inr REAL DEFAULT 0.00,
+        spend_rent_inr REAL DEFAULT 0.00,
+        spend_others_inr REAL DEFAULT 0.00,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
     conn.commit()
     conn.close()
-    print("Local SQLite lucid_production.db initialized successfully.")
+    print("Local SQLite cardwise_production.db initialized successfully.")
 
 if __name__ == "__main__":
     init_db()

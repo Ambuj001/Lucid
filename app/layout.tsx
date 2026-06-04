@@ -1,7 +1,7 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Lucid Dashboard',
+  title: 'Cardwise Dashboard',
   description: 'Premium Indian credit card optimization platform',
 };
 

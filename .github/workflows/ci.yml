@@ -1,4 +1,4 @@
-name: Lucid CI Pipeline
+name: Cardwise CI Pipeline
 
 on:
   push:

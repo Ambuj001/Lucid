@@ -1,6 +1,6 @@
-# Lucid Core Credit Card Optimization Engine
+# Cardwise Core Credit Card Optimization Engine
 
-Lucid is a high-performance credit and debit card reward yield optimization platform tailored for Indian financial instruments. This repository contains the core onboarding, data extraction, MCC resolution, ledger optimization, and backend API structures.
+Cardwise is a high-performance credit and debit card reward yield optimization platform tailored for Indian financial instruments. This repository contains the core onboarding, data extraction, MCC resolution, ledger optimization, and backend API structures.
 
 ## 🚀 Key Capabilities
 
@@ -60,4 +60,4 @@ python3 main.py
 ---
 
 ## 🧪 Continuous Integration
-Every push or pull request to the `main` branch triggers the **Lucid CI Pipeline** (`.github/workflows/ci.yml`), which automatically runs syntax checks and dependency checks for both the Node.js API and Python components.
+Every push or pull request to the `main` branch triggers the **Cardwise CI Pipeline** (`.github/workflows/ci.yml`), which automatically runs syntax checks and dependency checks for both the Node.js API and Python components.

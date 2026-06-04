@@ -1,7 +1,7 @@
 import sqlite3
 
 def seed_database():
-    conn = sqlite3.connect("lucid_production.db")
+    conn = sqlite3.connect("cardwise_production.db")
     cursor = conn.cursor()
 
     # Enable foreign keys
