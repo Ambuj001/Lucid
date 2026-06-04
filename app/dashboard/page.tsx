@@ -1403,12 +1403,12 @@ export default function CardwiseDashboard() {
             </div>
 
             {/* Quick Provisioning Widget Box */}
-            <div className="glass-pane p-6 rounded-2xl">
+            <div className="glass-pane p-6 rounded-2xl relative z-30">
               <h3 className="text-xs uppercase tracking-widest text-[#64748B] font-bold mb-3">
                 ➕ PROVISION NEW ASSET TO PORTFOLIO
               </h3>
               
-              <div className="relative">
+              <div className="relative z-20">
                 <input 
                   type="text"
                   value={widgetSearchQuery}
@@ -1418,7 +1418,7 @@ export default function CardwiseDashboard() {
                 />
 
                 {widgetSearchResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-10 max-h-60 overflow-y-auto">
+                  <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-30 max-h-60 overflow-y-auto">
                     {widgetSearchResults.map((card: any) => (
                       <div 
                         key={card.card_id}

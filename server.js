@@ -1,8 +1,14 @@
+
+
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { rateLimit } = require('express-rate-limit');
+const { GoogleGenAI } = require('@google/genai');
 const app = express();
+
+const aiEngineClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // ── Rate Limiting ────────────────────────────────────────────────────────────
 const engineLimiter = rateLimit({
@@ -401,93 +407,153 @@ app.post('/api/v1/engine/evaluate', engineLimiter, async (req, res) => {
 // POST /api/v1/engine/ai-parse
 // Natural language prompt evaluation (used by the AI Suggestion tab)
 // ─────────────────────────────────────────────────────────────────────────────
-app.post('/api/v1/engine/ai-parse', engineLimiter, async (req, res) => {
+app.post('/api/v1/engine/ai-parse', engineLimiter, (req, res) => {
   const { prompt, user_id } = req.body;
 
   if (!prompt || !user_id) {
-    return res.status(400).json({ error: 'MISSING_PROMPT_OR_USER_ID' });
+    return res.status(400).json({ error: "PARAMETER_VALIDATION_FAILURE" });
+  }
+
+  const cleanPrompt = prompt.toLowerCase();
+  let matched_mcc = "5310"; // Default: Retail
+  let category_badge = "RETAIL";
+
+  if (cleanPrompt.includes("zomato") || cleanPrompt.includes("swiggy") || cleanPrompt.includes("food")) {
+    matched_mcc = "5812";
+    category_badge = "DINING & DELIVERY";
+  } else if (cleanPrompt.includes("flight") || cleanPrompt.includes("hotel") || cleanPrompt.includes("travel")) {
+    matched_mcc = "4511";
+    category_badge = "TRAVEL & FLIGHTS";
+  }
+
+  let transaction_value = 0;
+  const numericMatch = cleanPrompt.replace(/[,₹]/g, '').match(/\b\d+(?:\.\d{1,2})?\b/);
+  if (numericMatch) transaction_value = parseFloat(numericMatch[0]);
+
+  // Combined parallel database query to check wallets, goals, and rules at the same time
+  const dbQueries = [
+    dbQuery("SELECT uw.card_id, c.card_name, c.bank_id, c.card_type FROM user_wallets uw JOIN cards c ON uw.card_id = c.card_id WHERE uw.user_id = ?", [user_id]),
+    dbQuery("SELECT * FROM user_spend_goals WHERE user_id = ?", [user_id]),
+    dbQuery("SELECT * FROM reward_rules WHERE mcc_code = ?", [matched_mcc])
+  ];
+
+  Promise.all(dbQueries).then(([userCards, spendGoals, rules]) => {
+    const sortedResults = userCards.map(card => {
+      const rule = rules.find(r => r.card_id === card.card_id);
+      const goal = spendGoals.find(g => g.card_id === card.card_id);
+
+      let yield_pct = 1.0;
+      let warning = rule ? rule.gimmick_warning_text : null;
+      let strategy_indicator = "STANDARD_EARNINGS_TRACK";
+      let priority_weight = 0; // Higher weight bubbles to the top of the list
+
+      if (rule) {
+        yield_pct = rule.is_completely_excluded === 1 ? 0.0 : parseFloat(rule.base_reward_percentage);
+      }
+
+      let net_savings = transaction_value > 0 ? (transaction_value * (yield_pct / 100)) : 0;
+
+      // MILESTONE INTEGRATION CHECK
+      if (goal) {
+        const remainingSpend = goal.target_spend_inr - goal.current_spend_inr;
+        if (remainingSpend > 0 && transaction_value > 0) {
+          strategy_indicator = `🎯 TARGET GOAL: BOSTING MILESTONE PROGRESSION (${((goal.current_spend_inr / goal.target_spend_inr) * 100).toFixed(0)}% ACHIEVED)`;
+          // Add priority weight if this transaction safely advances a spend milestone tracking goal
+          if (transaction_value <= remainingSpend + 50000) {
+             priority_weight += 100; 
+          }
+        }
+      }
+
+      // Check for multiplier benefits (e.g., 5X multipliers)
+      if (yield_pct >= 5.0) {
+        strategy_indicator = `🔥 REWARD MULTIPLIER ACTIVE: Verified high-yield accelerator loop.`;
+      }
+
+      const cleanLabel = card.card_name.startsWith(card.bank_id) ? card.card_name : `${card.bank_id} ${card.card_name}`;
+
+      return {
+        card_name: cleanLabel,
+        card_type: card.card_type,
+        reward_yield_pct: yield_pct,
+        net_savings_inr: parseFloat(net_savings.toFixed(2)),
+        warning_flag: warning,
+        strategy_badge: strategy_indicator,
+        execution_weight: priority_weight + yield_pct
+      };
+    });
+
+    // Sort by optimization priority metrics
+    sortedResults.sort((a, b) => b.execution_weight - a.execution_weight);
+
+    res.json({
+      parsed_category: category_badge,
+      extracted_amount: transaction_value,
+      sorted_results: sortedResults
+    });
+  }).catch(err => res.status(500).json({ error: err.message }));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/engine/sync-hidden-rules
+// Background engine that reads unstructured data and syncs it with the Cardwise database
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/api/v1/engine/sync-hidden-rules', async (req, res) => {
+  const { card_id, raw_unstructured_text_dump } = req.body;
+
+  if (!card_id || !raw_unstructured_text_dump) {
+    return res.status(400).json({ error: "MISSING_SYNC_METADATA_INPUTS" });
   }
 
   try {
-    let mcc, badge, transaction_value, personalized_tip;
-    const { isGeminiEnabled, parsePromptWithGemini } = require('./gemini_helper');
-
-    // 1. Fetch user's wallet cards and rules
-    const walletCards = await dbQuery(
-      `SELECT uw.card_id, c.card_name, c.bank_id, c.card_type
-       FROM user_wallets uw
-       JOIN cards c ON uw.card_id = c.card_id
-       WHERE uw.user_id = ?`,
-      [user_id]
-    );
-
-    let walletDataText = "No cards in wallet.";
-    if (walletCards.length > 0) {
-      const cardIds = walletCards.map(c => `'${c.card_id}'`).join(',');
-      const rulesRows = await dbQuery(
-        `SELECT r.card_id, c.card_name, c.bank_id, r.mcc_code, r.is_completely_excluded,
-                r.base_reward_percentage, r.monthly_capping_inr, r.gimmick_warning_text
-         FROM reward_rules r
-         JOIN cards c ON r.card_id = c.card_id
-         WHERE r.card_id IN (${cardIds})`
-      );
-      walletDataText = JSON.stringify(rulesRows, null, 2);
-    }
-
-    // Try Gemini first if enabled
-    let geminiParsed = null;
-    if (isGeminiEnabled()) {
-      geminiParsed = await parsePromptWithGemini(prompt, walletDataText);
-    }
-
-    if (geminiParsed) {
-      mcc = geminiParsed.mcc || 'DEFAULT';
-      badge = geminiParsed.category_badge || 'GENERAL';
-      transaction_value = typeof geminiParsed.amount === 'number' ? geminiParsed.amount : parseFloat(geminiParsed.amount || 0);
-      personalized_tip = geminiParsed.personalized_tip;
-    } else {
-      // Fallback to regex parser
-      const parsedMcc = classifyMCC(prompt);
-      mcc = parsedMcc.mcc;
-      badge = parsedMcc.badge;
-      transaction_value = extractAmount(prompt);
-    }
-
-    const result = await runRewardEngine(user_id, mcc, transaction_value);
-
-    if (result.empty) {
-      return res.json({
-        parsed_category: badge,
-        mcc_detected: mcc,
-        extracted_amount: transaction_value,
-        sorted_results: [],
-        personalized_tip,
-        status_message: 'WALLET_EMPTY'
-      });
-    }
-
-    // Reformat for the ai-parse response shape the frontend expects
-    const sorted_results = result.cards.map(r => ({
-      card_name: r.display_label,
-      card_type: r.card_type,
-      reward_yield_pct: r.yield_percentage,
-      net_savings_inr: r.calculated_savings_inr,
-      monthly_cap_inr: r.monthly_cap_inr,
-      cap_applied: r.cap_applied,
-      warning_flag: r.gimmick_alert,
-      action_badge: r.action_badge
-    }));
-
-    return res.json({
-      parsed_category: badge,
-      mcc_detected: mcc,
-      extracted_amount: transaction_value,
-      sorted_results,
-      personalized_tip
+    // Invoke Gemini's latest processing models with strict JSON output constraints
+    const response = await aiEngineClient.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: `Analyze this raw financial document dump for card id "${card_id}". Extract category exclusions, reward caps, and point values. 
+                 Return data strictly adhering to this JSON schema:
+                 {
+                   "mcc_code": "string",
+                   "base_reward_percentage": number,
+                   "monthly_capping_inr": number,
+                   "gimmick_warning_text": "string"
+                 }`,
+      config: {
+        responseMimeType: "application/json"
+      }
     });
-  } catch (err) {
-    console.error('AI Parse Error:', err);
-    return res.status(500).json({ error: err.message });
+
+    const parsedRules = JSON.parse(response.text);
+
+    // Save Gemini's structured output directly into your SQLite rules ledger
+    if (usePostgres) {
+      await pool.query(
+        `INSERT INTO reward_rules (card_id, mcc_code, base_reward_percentage, monthly_capping_inr, gimmick_warning_text)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT(card_id, mcc_code) DO UPDATE SET
+           base_reward_percentage = EXCLUDED.base_reward_percentage,
+           monthly_capping_inr = EXCLUDED.monthly_capping_inr,
+           gimmick_warning_text = EXCLUDED.gimmick_warning_text`,
+        [card_id, parsedRules.mcc_code, parsedRules.base_reward_percentage, parsedRules.monthly_capping_inr, parsedRules.gimmick_warning_text]
+      );
+      res.json({ success: true, message: "BANK_RULES_SYNCED_VIA_GEMINI", applied_data: parsedRules });
+    } else {
+      sqliteDb.run(
+        `INSERT INTO reward_rules (card_id, mcc_code, base_reward_percentage, monthly_capping_inr, gimmick_warning_text)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(card_id, mcc_code) DO UPDATE SET
+           base_reward_percentage = excluded.base_reward_percentage,
+           monthly_capping_inr = excluded.monthly_capping_inr,
+           gimmick_warning_text = excluded.gimmick_warning_text`,
+        [card_id, parsedRules.mcc_code, parsedRules.base_reward_percentage, parsedRules.monthly_capping_inr, parsedRules.gimmick_warning_text],
+        function(err) {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json({ success: true, message: "BANK_RULES_SYNCED_VIA_GEMINI", applied_data: parsedRules });
+        }
+      );
+    }
+
+  } catch (error) {
+    res.status(500).json({ error: "GEMINI_PROCESSING_ENGINE_FAULT", technical_details: error.message });
   }
 });
 
