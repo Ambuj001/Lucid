@@ -30,7 +30,21 @@ BANK_DATA = [
     ("SC", "Standard Chartered Bank", "1800-345-5000", "customer.care@sc.com"),
     ("AU", "AU Small Finance Bank", "1800-1200-699", "support@aubank.in"),
     ("NIYO", "Niyo Global / Equitas", "1800-103-1222", "global@goniyo.com"),
-    ("BOOKMYFOREX", "BookMyForex", "1800-108-8282", "support@bookmyforex.com")
+    ("BOOKMYFOREX", "BookMyForex", "1800-108-8282", "support@bookmyforex.com"),
+    ("BOB", "Bank of Baroda", "1800-258-4455", "support@bankofbaroda.com"),
+    ("PNB", "Punjab National Bank", "1800-180-2222", "care@pnb.co.in"),
+    ("UNION", "Union Bank of India", "1800-22-2244", "customercare@unionbankofindia.bank"),
+    ("CANARA", "Canara Bank", "1800-425-0018", "hocancard@canarabank.com"),
+    ("BOI", "Bank of India", "1800-220-229", "customer.feedback@bankofindia.co.in"),
+    ("CBI", "Central Bank of India", "1800-22-1911", "complaints@centralbank.co.in"),
+    ("INDIAN", "Indian Bank", "1800-425-0000", "customercomplaints@indianbank.co.in"),
+    ("UJJIVAN", "Ujjivan Small Finance Bank", "1800-208-2121", "customercare@ujjivan.com"),
+    ("SURYODAY", "Suryoday Small Finance Bank", "1800-266-7711", "smile@suryodaybank.com"),
+    ("UTKARSH", "Utkarsh Small Finance Bank", "1800-123-5353", "customercare@utkarsh.bank"),
+    ("FEDERAL", "Federal Bank", "1800-425-1199", "contact@federalbank.co.in"),
+    ("IDBI", "IDBI Bank", "1800-209-4324", "customercare@idbi.co.in"),
+    ("UCO", "UCO Bank", "1800-103-0123", "hopgr.calcutta@ucobank.co.in"),
+    ("IOB", "Indian Overseas Bank", "1800-425-4445", "complaints@iob.in")
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -200,7 +214,33 @@ CARDS_DATA = [
     ("in_au_zenith", "AU", "AU Zenith", "CREDIT", "VISA", 7999, 7999, 500000),
     ("in_au_vetta", "AU", "AU Vetta", "CREDIT", "VISA", 2999, 2999, 150000),
     ("in_niyo_global_forex", "NIYO", "Niyo Global Forex", "FOREX", "VISA", 0, 0, 0),
-    ("in_bookmyforex_prepaid", "BOOKMYFOREX", "BookMyForex Prepaid Card", "FOREX", "VISA", 0, 0, 0)
+    ("in_bookmyforex_prepaid", "BOOKMYFOREX", "BookMyForex Prepaid Card", "FOREX", "VISA", 0, 0, 0),
+
+    # RuPay Select Debit Cards (8 Cards)
+    ("in_sbi_rupay_select_debit", "SBI", "SBI RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_hdfc_rupay_select_debit", "HDFC", "HDFC RuPay Select Debit", "DEBIT", "RUPAY", 0, 250, 0),
+    ("in_icici_rupay_select_debit", "ICICI", "ICICI RuPay Select Debit", "DEBIT", "RUPAY", 0, 199, 0),
+    ("in_axis_rupay_select_debit", "AXIS", "Axis RuPay Select Debit", "DEBIT", "RUPAY", 0, 500, 0),
+    ("in_idfc_first_rupay_select_debit", "IDFC", "IDFC First RuPay Select Debit", "DEBIT", "RUPAY", 0, 0, 0),
+    ("in_indus_rupay_select_debit", "INDUS", "IndusInd RuPay Select Debit", "DEBIT", "RUPAY", 0, 500, 0),
+    ("in_kotak_rupay_select_debit", "KOTAK", "Kotak RuPay Select Debit", "DEBIT", "RUPAY", 0, 299, 0),
+    ("in_yes_rupay_select_debit", "YES", "Yes Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 399, 0),
+
+    # Additional RuPay Select Debit Cards (14 Cards)
+    ("in_bob_rupay_select_debit", "BOB", "Bank of Baroda RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_pnb_rupay_select_debit", "PNB", "PNB RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_union_rupay_select_debit", "UNION", "Union Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_canara_rupay_select_debit", "CANARA", "Canara Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_boi_rupay_select_debit", "BOI", "Bank of India RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_cbi_rupay_select_debit", "CBI", "Central Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_indian_rupay_select_debit", "INDIAN", "Indian Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_ujjivan_rupay_select_debit", "UJJIVAN", "Ujjivan RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_suryoday_rupay_select_debit", "SURYODAY", "Suryoday RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_utkarsh_rupay_select_debit", "UTKARSH", "Utkarsh RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_federal_rupay_select_debit", "FEDERAL", "Federal Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_idbi_rupay_select_debit", "IDBI", "IDBI Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_uco_rupay_select_debit", "UCO", "UCO Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+    ("in_iob_rupay_select_debit", "IOB", "Indian Overseas Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0)
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -368,7 +408,98 @@ REWARD_RULES = [
     ("in_icici_sapphiro_debit", "4511", 0, 1.0, None, "✈️ 8 points per Rs.200 (1.0% yield) on international spends.", 0.25),
 
     # SBI Platinum Debit
-    ("in_sbi_platinum_debit", "DEFAULT", 0, 0.25, 250.0, "1 point per Rs.200 spent (0.25% yield). Capped at Rs.250/month.", 0.25)
+    ("in_sbi_platinum_debit", "DEFAULT", 0, 0.25, 250.0, "1 point per Rs.200 spent (0.25% yield). Capped at Rs.250/month.", 0.25),
+
+    # SBI RuPay Select Debit
+    ("in_sbi_rupay_select_debit", "DEFAULT", 0, 0.5, None, "2 reward points per Rs.200 spent on e-commerce (1% yield); 1 point per Rs.200 offline (0.5% yield).", 0.5),
+    ("in_sbi_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.5),
+    ("in_sbi_rupay_select_debit", "5541", 1, 0, 0, "🚫 Fuel spends excluded from points.", 0.5),
+
+    # HDFC RuPay Select Debit
+    ("in_hdfc_rupay_select_debit", "DEFAULT", 0, 1.0, 500.0, "1% cashback on online e-commerce spent (capped at Rs. 500/month); 0.5% on POS retail.", 1.0),
+    ("in_hdfc_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 1.0),
+
+    # ICICI RuPay Select Debit
+    ("in_icici_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_icici_rupay_select_debit", "5310", 0, 0.5, None, "💰 2 reward points per Rs.100 spent online (0.50% yield).", 0.25),
+    ("in_icici_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Axis RuPay Select Debit
+    ("in_axis_rupay_select_debit", "DEFAULT", 0, 0.2, None, "1 EDGE reward point per Rs.200 spent (0.20% yield).", 0.2),
+    ("in_axis_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.2),
+
+    # IDFC First RuPay Select Debit
+    ("in_idfc_first_rupay_select_debit", "DEFAULT", 0, 0.2, None, "1 reward point per Rs.150 spent (0.20% yield).", 0.2),
+    ("in_idfc_first_rupay_select_debit", "5310", 0, 0.6, None, "💰 3x reward points on online/e-commerce shopping.", 0.2),
+    ("in_idfc_first_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.2),
+
+    # IndusInd RuPay Select Debit
+    ("in_indus_rupay_select_debit", "DEFAULT", 0, 0.5, None, "1 reward point per Rs.100 spent on POS/online shopping (0.50% yield).", 0.5),
+    ("in_indus_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.5),
+
+    # Kotak RuPay Select Debit
+    ("in_kotak_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 Kotak reward point per Rs.200 spent (0.25% yield).", 0.25),
+    ("in_kotak_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Yes Bank RuPay Select Debit
+    ("in_yes_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 Yes reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_yes_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Bank of Baroda RuPay Select Debit
+    ("in_bob_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_bob_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # PNB RuPay Select Debit
+    ("in_pnb_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_pnb_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Union Bank RuPay Select Debit
+    ("in_union_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_union_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Canara Bank RuPay Select Debit
+    ("in_canara_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_canara_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Bank of India RuPay Select Debit
+    ("in_boi_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_boi_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Central Bank RuPay Select Debit
+    ("in_cbi_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_cbi_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Indian Bank RuPay Select Debit
+    ("in_indian_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_indian_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Ujjivan RuPay Select Debit
+    ("in_ujjivan_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_ujjivan_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Suryoday RuPay Select Debit
+    ("in_suryoday_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_suryoday_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Utkarsh RuPay Select Debit
+    ("in_utkarsh_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_utkarsh_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Federal Bank RuPay Select Debit
+    ("in_federal_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_federal_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # IDBI Bank RuPay Select Debit
+    ("in_idbi_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_idbi_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # UCO Bank RuPay Select Debit
+    ("in_uco_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_uco_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # Indian Overseas Bank RuPay Select Debit
+    ("in_iob_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_iob_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25)
 ]
 
 # Populate sensible defaults dynamically for any card that does not have an explicit rules record.
@@ -533,9 +664,16 @@ def generate_markdown_docs():
             doc += "- **International ATM Withdrawals:** Flat cash withdrawal fee of ~$2.00 (or equivalent in loaded currency) per transaction.\n"
             doc += "- **Lounge Access:** Includes 1 complimentary international airport lounge visit per calendar quarter in India.\n"
         elif card_type == "DEBIT":
-            doc += "- **Linked Accounts:** Direct debit from savings/current bank accounts. Subject to daily withdrawal limits.\n"
-            doc += "- **Lounge Access:** 1 complimentary domestic lounge access per calendar quarter subject to meeting spend guidelines.\n"
-            doc += "- **Insurance Cover:** Accident and card liability insurance of up to ₹5 Lakhs.\n"
+            if card_network == "RUPAY" and "select" in card_name.lower():
+                doc += "- **Linked Accounts:** Direct debit from savings/current bank accounts. Subject to high daily withdrawal & purchase limits.\n"
+                doc += "- **RuPay Select Wellness:** 1 complimentary health checkup package, 1 complimentary gym/fitness membership session (30 days offline or 90 days home), 1 complimentary spa or salon service, and 1 complimentary golf lesson/round per quarter.\n"
+                doc += "- **Lounge Access:** 1 complimentary domestic airport lounge access per calendar quarter, plus 2 complimentary international airport lounge visits per calendar year.\n"
+                doc += "- **Insurance Cover:** Personal accident and permanent total disability cover of up to ₹10 Lakhs (requires at least 1 POS/E-com transaction within 30 days prior to the accident).\n"
+                doc += "- **Cab & Concierge:** 1 complimentary ₹100 cab coupon per quarter, plus 24/7 dedicated concierge services.\n"
+            else:
+                doc += "- **Linked Accounts:** Direct debit from savings/current bank accounts. Subject to daily withdrawal limits.\n"
+                doc += "- **Lounge Access:** 1 complimentary domestic lounge access per calendar quarter subject to meeting spend guidelines.\n"
+                doc += "- **Insurance Cover:** Accident and card liability insurance of up to ₹5 Lakhs.\n"
         else:
             # Credit Card defaults
             if join_fee >= 10000:

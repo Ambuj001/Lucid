@@ -8,23 +8,43 @@ module.exports = {
     extend: {
       colors: {
         cardwise: {
-          bg: "#000000",
-          surface: "#0A0A0A",
-          border: "#262626",
-          pink: "#FF2E93",
-          textMain: "#FFFFFF",
-          textMuted: "#A3A3A3"
+          bg: "#F8FAFC",
+          surface: "#FFFFFF",
+          glass: "rgba(255,255,255,0.7)",
+          border: "rgba(0,0,0,0.06)",
+          textMain: "#0F172A",
+          textMuted: "#64748B",
+          indigo: "#4F46E5",
+          violet: "#7C3AED",
+          accent: "#6366F1",
         }
       },
-      borderRadius: {
-        'none': '0px',
-        'sm': '0px',
-        'md': '0px',
-        'lg': '0px',
-        'xl': '0px',
-        '2xl': '0px',
-        'full': '0px',
-      }
+      backdropBlur: {
+        xl: '24px',
+        '2xl': '40px',
+      },
+      boxShadow: {
+        'glass-inset': 'inset 0 1px 1px rgba(255,255,255,0.05)',
+        'glow': '0 0 80px rgba(99,102,241,0.15)',
+        'glow-lg': '0 0 120px rgba(99,102,241,0.2)',
+      },
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      keyframes: {
+        'fade-in-up': {
+          '0%': { opacity: '0', transform: 'translateY(12px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'scale-in': {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+      },
+      animation: {
+        'fade-in-up': 'fade-in-up 0.5s ease-out forwards',
+        'scale-in': 'scale-in 0.3s ease-out forwards',
+      },
     },
   },
   plugins: [],

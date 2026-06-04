@@ -60,41 +60,44 @@ export default function WalletOnboardingPage() {
   };
 
   return (
-    <div className="bg-[#F9F9FB] min-h-screen text-[#1A1D20] font-sans antialiased p-10 flex flex-col items-center justify-center">
-      <div className="bg-white border border-[#E9ECEF] p-8 rounded-2xl shadow-sm max-w-xl w-full space-y-6">
+    <div className="bg-[#F8FAFC] min-h-screen text-[#0F172A] font-sans antialiased p-10 flex flex-col items-center justify-center relative">
+      {/* Ambient glow */}
+      <div className="spectral-glow w-[400px] h-[400px] top-20 right-1/4 fixed" />
+      
+      <div className="glass-pane p-8 rounded-2xl max-w-xl w-full space-y-6 relative z-10 anim-fade-in-up">
         
         <div className="space-y-1">
-          <label className="block text-xs uppercase tracking-widest text-blue-600 font-bold">
+          <label className="block text-xs uppercase tracking-widest text-indigo-400 font-bold">
             Onboarding & Asset Configuration
           </label>
-          <h2 className="text-xl font-bold text-zinc-950">Search & Provision Cards</h2>
-          <p className="text-xs text-zinc-500">Query the production credit directory to link a card variant to user {CURRENT_USER_ID}.</p>
+          <h2 className="text-xl font-bold text-[#0F172A]">Search & Provision Cards</h2>
+          <p className="text-xs text-[#64748B]">Query the production credit directory to link a card variant to user {CURRENT_USER_ID}.</p>
         </div>
 
-        {/* Input Panel with rounded borders */}
+        {/* Input Panel */}
         <div className="relative">
           <input 
             type="text"
             value={searchQuery}
             onChange={(e) => executeCardSearch(e.target.value)}
             placeholder="Search bank or card name (e.g. SBI Cashback, Infinia)..."
-            className="w-full bg-[#F8F9FA] border border-[#E9ECEF] focus:border-blue-500 rounded-xl p-4 text-sm text-[#1A1D20] outline-none transition-colors"
+            className="w-full glass-input rounded-xl p-4 text-sm"
           />
 
           {/* Results list panel */}
           {searchResults.length > 0 && (
-            <div className="absolute left-0 right-0 mt-2 bg-white border border-[#E9ECEF] rounded-xl shadow-lg z-10 max-h-60 overflow-y-auto">
+            <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 shadow-2xl z-10 max-h-60 overflow-y-auto">
               {searchResults.map((card: any) => (
                 <div 
                   key={card.card_id}
                   onClick={() => addCardToPortfolio(card.card_id, card.card_name)}
-                  className="p-4 border-b border-zinc-50 hover:bg-zinc-50 cursor-pointer flex justify-between items-center transition-colors first:rounded-t-xl last:rounded-b-xl"
+                  className="p-4 border-b border-slate-200/50 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition-colors first:rounded-t-xl last:rounded-b-xl"
                 >
                   <div>
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{card.bank_id}</span>
-                    <h4 className="text-sm font-bold text-zinc-900">{card.card_name}</h4>
+                    <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider">{card.bank_id}</span>
+                    <h4 className="text-sm font-bold text-[#0F172A]">{card.card_name}</h4>
                   </div>
-                  <span className="text-[10px] text-zinc-500 border border-[#E9ECEF] px-2 py-0.5 rounded-lg bg-zinc-50">
+                  <span className="text-[10px] text-[#64748B] border border-slate-200 px-2 py-0.5 rounded-lg bg-slate-50">
                     {card.card_type}
                   </span>
                 </div>
@@ -104,14 +107,14 @@ export default function WalletOnboardingPage() {
         </div>
 
         {message && (
-          <div className="p-4 rounded-xl text-xs font-semibold bg-blue-50 border border-blue-100 text-blue-700">
+          <div className="p-4 rounded-xl text-xs font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
             {message}
           </div>
         )}
 
-        <div className="pt-4 border-t border-[#E9ECEF] flex justify-between text-xs text-zinc-400">
+        <div className="pt-4 border-t border-slate-200 flex justify-between text-xs text-[#64748B]">
           <span>Active User Session: {CURRENT_USER_ID}</span>
-          <a href="/dashboard" className="text-blue-600 hover:underline font-semibold">Back to Dashboard</a>
+          <a href="/dashboard" className="text-indigo-400 hover:underline font-semibold">Back to Dashboard</a>
         </div>
 
       </div>
