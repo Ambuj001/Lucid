@@ -7,6 +7,8 @@
 (function () {
   'use strict';
 
+
+
   const DOMAIN = location.hostname.replace('www.', '');
   let bannerInjected = false;
   let retryCount = 0;
@@ -229,7 +231,20 @@
   }
 
   // ── Main flow ─────────────────────────────────────────────
+  let lastRunUrl = ''; // Track URL to detect navigation changes
+
   async function run() {
+    const currentUrl = location.href;
+
+    // If the URL changed since last run, reset the panel so we re-fetch
+    if (bannerInjected && currentUrl !== lastRunUrl) {
+      bannerInjected = false;
+      retryCount = 0;
+      // Remove old panel to replace with fresh data
+      const oldHost = document.getElementById('cw-host');
+      if (oldHost) oldHost.remove();
+    }
+
     if (bannerInjected) return;
     if (!isCheckoutPage()) {
       // Retry a few times for SPAs that load content after initial page load
@@ -245,12 +260,20 @@
       amount = 999;
     }
     const title = extractProductTitle() || "Shopping items";
-    const url = location.href;
+    const url = currentUrl;
     bannerInjected = true;
+    lastRunUrl = currentUrl;
     retryCount = 0;
 
     // Show loading panel first
     const panelHost = injectLoadingPanel();
+
+    // Check if extension context is still valid
+    if (!chrome.runtime?.id) {
+      console.warn("CardWise: Extension context invalidated — please reload the extension.");
+      renderError(panelHost, 'Extension was updated. Please refresh this page.');
+      return;
+    }
 
     // Request recommendation from background
     let result;
@@ -269,8 +292,14 @@
       });
     } catch (err) {
       console.warn("CardWise: background message failed:", err.message);
-      // Still show the panel — user is on a shopping site
-      renderLoginPrompt(panelHost);
+      // Distinguish extension context errors from real auth issues
+      if (err.message.includes('Extension context invalidated') ||
+          err.message.includes('Could not establish connection') ||
+          err.message.includes('message port closed')) {
+        renderError(panelHost, 'Extension was reloaded. Please refresh this page to reconnect.');
+      } else {
+        renderLoginPrompt(panelHost);
+      }
       return;
     }
 
@@ -278,10 +307,52 @@
       renderLoginPrompt(panelHost);
     } else if (result.error) {
       renderError(panelHost, result.error);
+    } else if (!result.top_recommendation) {
+      renderError(panelHost, 'No cards in your wallet. Add cards from the CardWise dashboard to get recommendations.');
     } else {
       renderRecommendation(panelHost, result, amount, title);
     }
   }
+
+  // ── SPA Navigation Detection ────────────────────────────────
+  // Intercept History API pushState/replaceState for SPA navigation
+  function setupNavigationListener() {
+    // Override pushState and replaceState to detect SPA navigation
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    history.pushState = function(...args) {
+      originalPushState.apply(this, args);
+      onNavigationChange();
+    };
+
+    history.replaceState = function(...args) {
+      originalReplaceState.apply(this, args);
+      onNavigationChange();
+    };
+
+    // Also listen for popstate (back/forward button)
+    window.addEventListener('popstate', onNavigationChange);
+
+    // URL polling fallback (for sites that navigate without History API)
+    let pollUrl = location.href;
+    setInterval(() => {
+      if (location.href !== pollUrl) {
+        pollUrl = location.href;
+        onNavigationChange();
+      }
+    }, 2000);
+  }
+
+  function onNavigationChange() {
+    // Debounce — wait for the page to settle after navigation
+    clearTimeout(onNavigationChange._timer);
+    onNavigationChange._timer = setTimeout(() => {
+      run();
+    }, 1200);
+  }
+
+  setupNavigationListener();
 
   // ── Inject Shadow DOM host ─────────────────────────────────
   function getShadow(host) {
@@ -452,6 +523,164 @@
         </div>
       </div>`).join('');
 
+    // Points Redemption Intelligence HTML (only for non-cashback cards)
+    const redemption = data.points_redemption_intel;
+    let pointsRedemptionHTML = '';
+    if (redemption) {
+      const top3HTML = (redemption.top_3_partners || []).map((p, i) => `
+        <div class="redemption-partner-row">
+          <div class="redemption-rank">${i === 0 ? '🏆' : i === 1 ? '🥈' : '🥉'}</div>
+          <div class="redemption-partner-info">
+            <div class="redemption-partner-name">${p.name}</div>
+            <div class="redemption-partner-meta">${p.type === 'airline' ? '✈️' : '🏨'} ${p.ratio}</div>
+          </div>
+          <div class="redemption-partner-value">₹${(p.value_inr || 0).toLocaleString('en-IN')}</div>
+        </div>
+      `).join('');
+
+      pointsRedemptionHTML = `
+        <div class="points-redemption-section shadow-box">
+          <div class="section-header-row">
+            <span class="section-title">💎 POINTS VALUE INTELLIGENCE</span>
+            <span class="evaluation-badge badge-good_deal" style="background:rgba(255,46,147,0.08);color:#FF2E93;border-color:rgba(255,46,147,0.2);">
+              ${redemption.value_multiplier ? redemption.value_multiplier.toFixed(1) + 'x VALUE' : 'ACCELERATED'}
+            </span>
+          </div>
+          <div class="redemption-summary">
+            <div class="redemption-points-row">
+              <div class="redemption-stat">
+                <div class="redemption-stat-label">POINTS EARNED</div>
+                <div class="redemption-stat-value">${(redemption.estimated_points_earned || 0).toLocaleString('en-IN')}</div>
+              </div>
+              <div class="redemption-arrow">→</div>
+              <div class="redemption-stat highlight-stat">
+                <div class="redemption-stat-label pink">BEST VALUE</div>
+                <div class="redemption-stat-value pink">₹${(redemption.accelerated_value_inr || 0).toLocaleString('en-IN')}</div>
+              </div>
+            </div>
+            <div class="redemption-baseline">
+              Standard redemption: ₹${(redemption.standard_redemption_inr || 0).toLocaleString('en-IN')} · via <strong>${redemption.best_partner_name || 'N/A'}</strong> (${redemption.best_partner_program || ''})
+            </div>
+          </div>
+          <div class="redemption-partners-list">
+            <div style="font-size:8px;font-weight:900;color:#868E96;letter-spacing:1.5px;margin-bottom:6px;">TOP TRANSFER PARTNERS</div>
+            ${top3HTML}
+          </div>
+          ${redemption.insight ? `
+            <div class="redemption-insight">
+              <span style="font-size:8px;font-weight:900;color:#FF2E93;letter-spacing:1px;">💡 </span>
+              ${redemption.insight}
+            </div>
+          ` : ''}
+        </div>`;
+    }
+
+    // Card Perks & Details HTML
+    let cardDetailsHTML = '';
+    if (bestCard.annual_fee !== undefined || bestCard.forex_markup_pct !== undefined || bestCard.lounge_domestic || bestCard.lounge_international || bestCard.ancillary_benefits) {
+      const waiverStr = bestCard.spend_waiver && bestCard.spend_waiver > 0
+        ? ` (Waived at ₹${bestCard.spend_waiver.toLocaleString('en-IN')})`
+        : '';
+      
+      const feeText = bestCard.joining_fee === 0 && bestCard.annual_fee === 0
+        ? 'Lifetime Free (LTF)'
+        : `₹${(bestCard.annual_fee || 0).toLocaleString('en-IN')}${waiverStr}`;
+
+      cardDetailsHTML = `
+        <div class="card-details-section shadow-box">
+          <div class="section-title">💳 CARD DETAILS & BENEFITS</div>
+          <div class="detail-row">
+            <span>ANNUAL FEE</span>
+            <span class="detail-val-highlight">${feeText}</span>
+          </div>
+          <div class="detail-row">
+            <span>FOREX MARKUP</span>
+            <span class="detail-val-highlight">${bestCard.forex_markup_pct !== undefined ? bestCard.forex_markup_pct.toFixed(2) + '%' : '3.50%'}</span>
+          </div>
+          <div class="detail-row">
+            <span>DOMESTIC LOUNGE</span>
+            <span class="detail-val-highlight" style="font-size: 9px; max-width: 65%; text-align: right; line-height: 1.3;">
+              ${bestCard.lounge_domestic || 'None'}
+            </span>
+          </div>
+          <div class="detail-row">
+            <span>INT'L LOUNGE</span>
+            <span class="detail-val-highlight" style="font-size: 9px; max-width: 65%; text-align: right; line-height: 1.3;">
+              ${bestCard.lounge_international || 'None'}
+            </span>
+          </div>
+          ${bestCard.ancillary_benefits ? `
+            <div class="detail-row text-wrap">
+              <span>SPECIAL PERKS & ANCILLARY TIERS</span>
+              <span>${bestCard.ancillary_benefits}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // Shop Partners HTML
+    const shopPartners = data.shop_partners || [];
+    let shopPartnersHTML = '';
+    if (shopPartners.length > 0) {
+      const partnersListHTML = shopPartners.map(sp => `
+        <div class="shop-partner-row ${sp.is_current ? 'current-merchant' : ''}">
+          <div class="shop-partner-dot" style="background:${sp.color}"></div>
+          <div class="shop-partner-info">
+            <div class="shop-partner-name">${sp.name} ${sp.is_current ? '<span class="current-tag">CURRENT</span>' : ''}</div>
+            <div class="shop-partner-cat">${sp.category}</div>
+          </div>
+          <div class="shop-partner-cashback" style="color:${sp.color}">${sp.cashback}</div>
+        </div>
+      `).join('');
+
+      shopPartnersHTML = `
+        <div class="shop-partners-section shadow-box">
+          <div class="section-header-row">
+            <span class="section-title">🛍️ SHOP PARTNERS</span>
+            <span class="evaluation-badge" style="background:rgba(34,197,94,0.08);color:#16a34a;border:1px solid rgba(34,197,94,0.2);font-size:7px;font-weight:900;padding:2px 6px;border-radius:4px;letter-spacing:0.8px;">STACK CASHBACK</span>
+          </div>
+          <div class="shop-partners-list">
+            ${partnersListHTML}
+          </div>
+        </div>`;
+    }
+
+    // Recent History / Live Deals HTML
+    const history = data.recent_history || [];
+    let historyHTML = '';
+    if (history.length > 0) {
+      const historyListHTML = history.map(h => {
+        const dateStr = h.date ? new Date(h.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+        return `
+          <div class="history-row">
+            <div class="history-merchant-icon" style="background:${getCardGradient(h.bank_id)}">
+              ${(h.bank_id || '?').charAt(0)}
+            </div>
+            <div class="history-details">
+              <div class="history-merchant">${h.merchant || 'Unknown'}</div>
+              <div class="history-card">${h.card_name || ''} · ${h.bank_id || ''}</div>
+            </div>
+            <div class="history-right">
+              <div class="history-multiplier">${h.multiplier || 1}x</div>
+              <div class="history-date">${dateStr}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      historyHTML = `
+        <div class="history-section shadow-box">
+          <div class="section-header-row">
+            <span class="section-title">🔥 LIVE DEALS</span>
+            <span class="evaluation-badge" style="background:rgba(255,165,0,0.08);color:#f59e0b;border:1px solid rgba(255,165,0,0.2);font-size:7px;font-weight:900;padding:2px 6px;border-radius:4px;letter-spacing:0.8px;">ACTIVE</span>
+          </div>
+          <div class="history-list">
+            ${historyListHTML}
+          </div>
+        </div>`;
+    }
+
     shadow.innerHTML = BASE_STYLES + `
       <div class="cardwise-panel" id="cw-panel">
         <div class="panel-header">
@@ -532,6 +761,12 @@
             </div>
           </div>
 
+           <!-- Points Redemption Intelligence (only for non-cashback cards) -->
+          ${pointsRedemptionHTML}
+
+          <!-- Card Perks & Details -->
+          ${cardDetailsHTML}
+
           <!-- Credit Utilization Tracker -->
           <div class="utilization-section shadow-box">
             <div class="section-title">CREDIT UTILIZATION</div>
@@ -587,6 +822,12 @@
               </div>
             </div>
           ` : ''}
+
+          <!-- Shop Partners Section -->
+          ${shopPartnersHTML}
+
+          <!-- Live Deals / History Section -->
+          ${historyHTML}
 
         </div>
       </div>
@@ -1068,6 +1309,143 @@
     .alt-card-right { text-align: right; z-index: 1; }
     .alt-card-saving { font-size: 13px; font-weight: 900; color: #FF2E93; text-shadow: 0 0 10px rgba(255,46,147,0.3); }
     .alt-card-yield { font-size: 9px; opacity: 0.55; margin-top: 2px; color: #fff; }
+
+    /* ── Points Redemption Intelligence ── */
+    .points-redemption-section { display: flex; flex-direction: column; gap: 10px; }
+    .redemption-summary {
+      background: #F8F9FA;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .redemption-points-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .redemption-stat { flex: 1; }
+    .highlight-stat {
+      background: rgba(255, 46, 147, 0.04);
+      border: 1px solid rgba(255, 46, 147, 0.12);
+      border-radius: 8px;
+      padding: 6px 10px;
+    }
+    .redemption-stat-label {
+      font-size: 7px; font-weight: 900; color: #868E96;
+      letter-spacing: 1.2px; margin-bottom: 2px;
+    }
+    .redemption-stat-label.pink { color: #FF2E93; }
+    .redemption-stat-value {
+      font-size: 16px; font-weight: 900; color: #1A1D20;
+    }
+    .redemption-stat-value.pink { color: #FF2E93; }
+    .redemption-arrow {
+      font-size: 16px; color: #FF2E93; font-weight: 900;
+      flex-shrink: 0; margin: 0 4px;
+    }
+    .redemption-baseline {
+      font-size: 9px; color: #868E96; margin-top: 8px;
+      line-height: 1.5; border-top: 1px solid rgba(0, 0, 0, 0.05); padding-top: 8px;
+    }
+    .redemption-baseline strong { color: #1A1D20; }
+    .redemption-partners-list {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .redemption-partner-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px;
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .redemption-partner-row:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .redemption-rank { font-size: 14px; flex-shrink: 0; }
+    .redemption-partner-info { flex: 1; min-width: 0; }
+    .redemption-partner-name { font-size: 11px; font-weight: 700; color: #1A1D20; }
+    .redemption-partner-meta { font-size: 8px; color: #868E96; margin-top: 1px; }
+    .redemption-partner-value {
+      font-size: 13px; font-weight: 900; color: #2ecc71;
+      text-shadow: 0 0 8px rgba(46,204,113,0.1);
+      flex-shrink: 0;
+    }
+    .redemption-insight {
+      font-size: 10px; color: #868E96; line-height: 1.5;
+      background: #F8F9FA;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    /* ── Shop Partners ── */
+    .shop-partners-section { display: flex; flex-direction: column; gap: 8px; }
+    .shop-partners-list { display: flex; flex-direction: column; gap: 5px; }
+    .shop-partner-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px;
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      transition: transform 0.15s, background 0.15s;
+    }
+    .shop-partner-row:hover {
+      transform: translateX(2px);
+      background: #F8F9FA;
+    }
+    .shop-partner-row.current-merchant {
+      border: 1px solid rgba(255, 46, 147, 0.3);
+      background: rgba(255, 46, 147, 0.04);
+    }
+    .shop-partner-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+    .shop-partner-info { flex: 1; min-width: 0; }
+    .shop-partner-name {
+      font-size: 11px; font-weight: 700; color: #1A1D20;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .current-tag {
+      font-size: 7px; font-weight: 900; color: #FF2E93;
+      background: rgba(255, 46, 147, 0.15);
+      padding: 1px 5px; border-radius: 3px;
+      letter-spacing: 0.8px;
+    }
+    .shop-partner-cat { font-size: 8px; color: #868E96; margin-top: 1px; }
+    .shop-partner-cashback {
+      font-size: 13px; font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    /* ── History / Live Deals ── */
+    .history-section { display: flex; flex-direction: column; gap: 8px; }
+    .history-list { display: flex; flex-direction: column; gap: 5px; }
+    .history-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px;
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      transition: transform 0.15s;
+    }
+    .history-row:hover { transform: translateX(2px); }
+    .history-merchant-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 900; color: #FFFFFF;
+      background: #FF2E93;
+      flex-shrink: 0;
+    }
+    .history-details { flex: 1; min-width: 0; }
+    .history-merchant { font-size: 11px; font-weight: 700; color: #1A1D20; text-transform: uppercase; }
+    .history-card { font-size: 8px; color: #868E96; margin-top: 1px; }
+    .history-right { text-align: right; flex-shrink: 0; }
+    .history-multiplier {
+      font-size: 12px; font-weight: 800; color: #1A1D20;
+    }
+    .history-date { font-size: 8px; color: #ADB5BD; margin-top: 1px; }
 
     /* ── Floating "C" badge ── */
     .cardwise-badge {

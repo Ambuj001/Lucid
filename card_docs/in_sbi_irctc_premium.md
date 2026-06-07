@@ -16,10 +16,18 @@ This matrix outlines the net cash-equivalent return percentages across different
 
 | Category / Merchant | MCC Code | Reward Yield | Monthly Cap / Exclusions |
 | :--- | :--- | :--- | :--- |
-| **Default / All Other Spends** | `DEFAULT` | **1.0%** | No Cap |
+| **Default / All Other Spends** | `DEFAULT` | **0.5%** | No Cap |
+| Rail & Bus Transit (IRCTC, Redbus) | `4112` | **10.0%** | No Cap |
+| Dining, Restaurants & Food Delivery | `5812` | **0.75%** | No Cap |
+| Utilities (Electricity, Water, Gas) | `4900` | **0.75%** | No Cap |
+| Rent Payments | `6552` | **0.00% (Excluded)** | 🚫 Excluded Category |
 
 ### ⚠️ Crucial Terms and Marketing Gimmicks
-- Base 1.0% reward yield.
+- Base 2 reward points per Rs.100 spent (0.5% yield).
+- 🚆 Up to 10% value back as reward points on AC rail tickets booked via irctc.co.in.
+- 🍔 3X points (0.75% yield) on Dining spends.
+- ⚡ 3X points (0.75% yield) on Electricity bill payments.
+- 🚫 Rent payments earn zero rewards.
 
 ---
 *This document is the verified production specification copy for Cardwise Engine v2. Last updated mid-2026. Official HDFC/SBI/ICICI/Axis terms and conditions apply.*

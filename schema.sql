@@ -18,8 +18,14 @@ CREATE TABLE cards (
     card_network VARCHAR(20) NOT NULL CHECK (card_network IN ('VISA', 'MASTERCARD', 'RUPAY', 'AMEX')),
     joining_fee_inr NUMERIC(10, 2) DEFAULT 0.00,
     annual_fee_inr NUMERIC(10, 2) DEFAULT 0.00,
-    spend_waiver_threshold_inr NUMERIC(10, 2) DEFAULT NULL,
+    spend_waiver_threshold_inr NUMERIC(15, 2) DEFAULT NULL,
     is_active BOOLEAN DEFAULT TRUE,
+    official_link VARCHAR(500),
+    forex_markup_pct NUMERIC(4, 2) DEFAULT 3.50,
+    lounge_access_domestic TEXT DEFAULT NULL,
+    lounge_access_international TEXT DEFAULT NULL,
+    ancillary_benefits TEXT DEFAULT NULL,
+    is_cashback_card BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -77,6 +83,7 @@ CREATE TABLE active_flash_deals (
 -- 8. User Financial Profiles for AI Recommendation and Planning
 CREATE TABLE user_financial_profiles (
     user_id VARCHAR(100) PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+    name VARCHAR(100) DEFAULT 'Ambuj Tiwari',
     age INTEGER NOT NULL,
     annual_income_inr NUMERIC(15, 2) NOT NULL,
     reward_goal VARCHAR(20) NOT NULL CHECK (reward_goal IN ('CASHBACK', 'AIRMILES', 'HOTEL_POINTS', 'MAX_YIELD')),

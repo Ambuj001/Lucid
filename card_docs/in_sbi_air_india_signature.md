@@ -16,10 +16,14 @@ This matrix outlines the net cash-equivalent return percentages across different
 
 | Category / Merchant | MCC Code | Reward Yield | Monthly Cap / Exclusions |
 | :--- | :--- | :--- | :--- |
-| **Default / All Other Spends** | `DEFAULT` | **1.0%** | No Cap |
+| **Default / All Other Spends** | `DEFAULT` | **4.0%** | No Cap |
+| Airlines & Flights | `4511` | **30.0%** | No Cap |
+| Rent Payments | `6552` | **0.00% (Excluded)** | 🚫 Excluded Category |
 
 ### ⚠️ Crucial Terms and Marketing Gimmicks
-- Base 1.0% reward yield.
+- Base 4 reward points per Rs.100 spent (4.0% yield when converted 1:1 to Air India miles).
+- ✈️ 30 reward points per Rs.100 spent on direct Air India ticket bookings (30.0% yield).
+- 🚫 Rent payments earn zero rewards.
 
 ---
 *This document is the verified production specification copy for Cardwise Engine v2. Last updated mid-2026. Official HDFC/SBI/ICICI/Axis terms and conditions apply.*

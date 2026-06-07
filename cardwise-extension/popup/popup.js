@@ -3,7 +3,7 @@
 // Auth sync + live card recommendations from current tab
 // ═══════════════════════════════════════════════════════════
 
-const API = 'http://localhost:8000/api/v1';
+const API = 'http://localhost:3000/api/v1';
 let session = null;
 
 // Card issuer gradients (matching content script)
@@ -214,7 +214,7 @@ function bindUI() {
   const btnPromoDashboard = document.getElementById('btn-promo-dashboard');
   if (btnPromoDashboard) {
     btnPromoDashboard.onclick = () => {
-      chrome.tabs.create({ url: 'http://localhost:3000/dashboard' });
+      chrome.tabs.create({ url: 'http://localhost:3001/dashboard' });
     };
   }
 
@@ -222,7 +222,7 @@ function bindUI() {
   if (linkDashboard) {
     linkDashboard.onclick = (e) => {
       e.preventDefault();
-      chrome.tabs.create({ url: 'http://localhost:3000/dashboard' });
+      chrome.tabs.create({ url: 'http://localhost:3001/dashboard' });
     };
   }
 
@@ -230,7 +230,7 @@ function bindUI() {
   if (linkHistory) {
     linkHistory.onclick = (e) => {
       e.preventDefault();
-      chrome.tabs.create({ url: 'http://localhost:3000/dashboard/history' });
+      chrome.tabs.create({ url: 'http://localhost:3001/dashboard/history' });
     };
   }
 
@@ -245,14 +245,14 @@ const setupAuthListeners = () => {
   const createBtn = document.getElementById('createAccountBtn');
   if (createBtn) {
     createBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'http://localhost:3000/dashboard?auth=register' });
+      chrome.tabs.create({ url: 'http://localhost:3001/dashboard?auth=register' });
     });
   }
 
   const signinBtn = document.getElementById('signInBtn');
   if (signinBtn) {
     signinBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'http://localhost:3000/dashboard?auth=login' });
+      chrome.tabs.create({ url: 'http://localhost:3001/dashboard?auth=login' });
     });
   }
 };

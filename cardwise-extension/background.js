@@ -3,7 +3,7 @@
 // Handles JWT storage + calls /engine/evaluate API
 // ═══════════════════════════════════════════════════════════
 
-const API_BASE = "http://localhost:8000/api/v1";
+const API_BASE = "http://localhost:3000/api/v1";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "EVALUATE_CHECKOUT") {
@@ -50,17 +50,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "OPEN_POPUP") {
     if (chrome.action && chrome.action.openPopup) {
       chrome.action.openPopup().catch(() => {
-        chrome.tabs.create({ url: "http://localhost:3000/dashboard?auth=login" });
+        chrome.tabs.create({ url: "http://localhost:3001/dashboard?auth=login" });
       });
     } else {
-      chrome.tabs.create({ url: "http://localhost:3000/dashboard?auth=login" });
+      chrome.tabs.create({ url: "http://localhost:3001/dashboard?auth=login" });
     }
     sendResponse({ ok: true });
     return true;
   }
 
   if (message.type === "OPEN_LOGIN_PAGE") {
-    chrome.tabs.create({ url: "http://localhost:3000/dashboard?auth=login" });
+    chrome.tabs.create({ url: "http://localhost:3001/dashboard?auth=login" });
     sendResponse({ ok: true });
     return true;
   }
@@ -145,8 +145,8 @@ async function handleExtensionIntercept(payload) {
 // Sync from cookies to storage
 function syncFromCookies() {
   if (!chrome.cookies) return;
-  chrome.cookies.get({ url: 'http://localhost:3000', name: 'cw_token' }, (tokenCookie) => {
-    chrome.cookies.get({ url: 'http://localhost:3000', name: 'cw_email' }, (emailCookie) => {
+  chrome.cookies.get({ url: 'http://localhost:3001', name: 'cw_token' }, (tokenCookie) => {
+    chrome.cookies.get({ url: 'http://localhost:3001', name: 'cw_email' }, (emailCookie) => {
       const token = tokenCookie ? tokenCookie.value : null;
       const email = emailCookie ? decodeURIComponent(emailCookie.value) : null;
       
@@ -171,20 +171,20 @@ function syncToCookies(session) {
   if (!chrome.cookies) return;
   if (session?.token && session?.email) {
     chrome.cookies.set({
-      url: 'http://localhost:3000',
+      url: 'http://localhost:3001',
       name: 'cw_token',
       value: session.token,
       path: '/'
     });
     chrome.cookies.set({
-      url: 'http://localhost:3000',
+      url: 'http://localhost:3001',
       name: 'cw_email',
       value: encodeURIComponent(session.email),
       path: '/'
     });
   } else {
-    chrome.cookies.remove({ url: 'http://localhost:3000', name: 'cw_token' });
-    chrome.cookies.remove({ url: 'http://localhost:3000', name: 'cw_email' });
+    chrome.cookies.remove({ url: 'http://localhost:3001', name: 'cw_token' });
+    chrome.cookies.remove({ url: 'http://localhost:3001', name: 'cw_email' });
   }
 }
 

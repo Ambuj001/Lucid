@@ -55,7 +55,7 @@
     },
     {
       "matches": [
-        "http://localhost:3000/*"
+        "http://localhost:3001/*"
       ],
       "js": ["dashboard_sync.js"],
       "run_at": "document_idle"

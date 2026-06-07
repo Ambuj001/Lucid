@@ -1,6 +1,6 @@
-# OneCard Metal
+# OneCard Credit Card (Metallic Variant)
 
-The **OneCard Metal** is a premium **Credit** card issued by **OneCard / FPL Technologies** running on the **VISA** network. Below are the verified fee structures, reward policies, exclusions, and card terms.
+The **OneCard Credit Card (Metallic Variant)** is a premium **Credit** card issued by **OneCard / FPL Technologies** running on the **VISA** network. Below are the verified fee structures, reward policies, exclusions, and card terms.
 
 ## 💳 Fee and Waiver Structure
 - **Joining Fee:** ₹0.00 + GST
@@ -8,22 +8,26 @@ The **OneCard Metal** is a premium **Credit** card issued by **OneCard / FPL Tec
 - **Annual Fee Spend Waiver Threshold:** N/A (Card is either Lifetime Free or has a non-waivable annual fee structure).
 
 ## ✈️ Perks and Lounge Access
-- **Basic perks:** 1% fuel surcharge waiver at authorized retail fuel outlets.
-- **Lounge Access:** 4 complimentary domestic lounge visits per year, subject to spend rules in the previous quarter.
+- **Forex Markup:** 3.50% + GST
+- **Domestic Lounge:** 1 domestic lounge visit per quarter (variant specific on milestones).
+- **International Lounge:** None
+- **Ancillary Benefits:** App-centric instant fractional reward burning mechanics, zero cross-border markup during promotions.
 
 ## 📊 Reward Point Matrix & Category Exclusions
 This matrix outlines the net cash-equivalent return percentages across different merchant category codes (MCCs):
 
 | Category / Merchant | MCC Code | Reward Yield | Monthly Cap / Exclusions |
 | :--- | :--- | :--- | :--- |
-| **Default / All Other Spends** | `DEFAULT` | **0.2%** | No Cap |
-| Dining, Restaurants & Food Delivery | `5812` | **1.0%** | No Cap |
-| Grocery & Supermarkets (BigBasket, DMart) | `5411` | **1.0%** | No Cap |
+| **Default / All Other Spends** | `DEFAULT` | **0.02%** | No Cap |
+| Dining & Restaurants | `5812` | **0.50%** | No Cap |
+| Grocery & Supermarkets | `5411` | **0.50%** | No Cap |
+| Wallet Load | `6540` | **0.00% (Excluded)** | 🚫 Excluded Category |
 
 ### ⚠️ Crucial Terms and Marketing Gimmicks
-- 1 Reward Point per Rs.50 spent (0.2% yield, 10 points = Rs.1.00).
-- 🍔 5X points (1.0% yield) on your top 2 categories (dining/groceries) automatically.
-- 🛒 5X points (1.0% yield) on grocery if it ranks in top 2 spend categories.
+- Base: 1 point per Rs.50 (0.20% yield, 10 points = Rs.1.00 cash).
+- Top 2 Category: 5X points (Net yield: 1.00%) automatically if dining is in top 2 spends (requires spending across 3 categories).
+- Top 2 Category: 5X points (Net yield: 1.00%) automatically if groceries is in top 2 spends (requires spending across 3 categories).
+- 🚫 Wallet loading completely excluded.
 
 ---
-*This document is the verified production specification copy for Cardwise Engine v2. Last updated mid-2026. Official HDFC/SBI/ICICI/Axis terms and conditions apply.*
+*This document is the verified production specification copy for Cardwise Engine v2. Last updated mid-2026. Official terms and conditions apply.*

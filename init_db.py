@@ -13,9 +13,21 @@ def init_db():
         bank_id TEXT PRIMARY KEY, -- e.g., 'HDFC', 'AXIS', 'SBI', 'ICICI', 'PNB'
         display_name TEXT NOT NULL,
         customer_support_phone TEXT,
-        grievance_email TEXT
+        grievance_email TEXT,
+        redemption_portal_url TEXT,
+        redemption_portal_name TEXT
     );
     """)
+
+    # safe migration for existing database
+    try:
+        cursor.execute("ALTER TABLE banks ADD COLUMN redemption_portal_url TEXT;")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE banks ADD COLUMN redemption_portal_name TEXT;")
+    except sqlite3.OperationalError:
+        pass
 
     # 2. Master Cards and Variants Directory
     cursor.execute("""
@@ -29,9 +41,41 @@ def init_db():
         annual_fee_inr REAL DEFAULT 0.00,
         spend_waiver_threshold_inr REAL DEFAULT NULL,
         is_active INTEGER DEFAULT 1,
+        official_link TEXT,
+        forex_markup_pct REAL DEFAULT 3.50,
+        lounge_access_domestic TEXT,
+        lounge_access_international TEXT,
+        ancillary_benefits TEXT,
+        is_cashback_card INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
     """)
+
+    # safe migration for existing database
+    try:
+        cursor.execute("ALTER TABLE cards ADD COLUMN official_link TEXT;")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE cards ADD COLUMN forex_markup_pct REAL DEFAULT 3.50;")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE cards ADD COLUMN lounge_access_domestic TEXT;")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE cards ADD COLUMN lounge_access_international TEXT;")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE cards ADD COLUMN ancillary_benefits TEXT;")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        cursor.execute("ALTER TABLE cards ADD COLUMN is_cashback_card INTEGER DEFAULT 0;")
+    except sqlite3.OperationalError:
+        pass
 
     # 3. ISO 18245 Merchant Category Codes (MCC) Master List
     cursor.execute("""
@@ -115,6 +159,7 @@ def init_db():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS user_financial_profiles (
         user_id TEXT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+        name TEXT DEFAULT 'Ambuj Tiwari',
         age INTEGER NOT NULL,
         annual_income_inr REAL NOT NULL,
         reward_goal TEXT NOT NULL CHECK (reward_goal IN ('CASHBACK', 'AIRMILES', 'HOTEL_POINTS', 'MAX_YIELD')),
@@ -130,6 +175,12 @@ def init_db():
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
     """)
+
+    # Upgrade existing database safely
+    try:
+        cursor.execute("ALTER TABLE user_financial_profiles ADD COLUMN name TEXT DEFAULT 'Ambuj Tiwari';")
+    except sqlite3.OperationalError:
+        pass
 
     conn.commit()
     conn.close()

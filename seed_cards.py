@@ -309,9 +309,81 @@ REWARD_RULES = [
     ("in_sbi_simplyclick_credit", "6552", 1, 0, 0, "🚫 Rent payments excluded.", 0.25),
 
     # SBI AURUM
-    ("in_sbi_aurum", "DEFAULT", 0, 1.0, None, "Base 4 reward points per Rs.100 (1.0% yield, 1 point = Rs.0.25).", 0.25),
+    ("in_sbi_aurum", "DEFAULT", 0, 1.0, None, "Base 4 reward points per Rs.100 (1.0% yield, 1 point = Rs.0.25). Offers 1:1 transfer on premium airlines/hotels.", 0.25),
     ("in_sbi_aurum", "5812", 0, 2.5, None, "🍔 10X points (2.5% yield) on Dining spends.", 0.25),
-    ("in_sbi_aurum", "4511", 0, 2.5, None, "✈️ 10X points (2.5% yield) on flight bookings.", 0.25),
+    ("in_sbi_aurum", "4511", 0, 2.5, None, "✈️ 10X points (2.5% yield) on flight bookings booked directly.", 0.25),
+    ("in_sbi_aurum", "5310", 0, 2.5, None, "💰 10X points (2.5% yield) on Departmental store spends.", 0.25),
+    ("in_sbi_aurum", "6552", 1, 0, 0, "🚫 Rent payments earn zero rewards.", 0.25),
+
+    # SBI Elite
+    ("in_sbi_elite", "DEFAULT", 0, 0.5, None, "Base 2 reward points per Rs.100 (0.5% yield, 1 point = Rs.0.25).", 0.25),
+    ("in_sbi_elite", "5812", 0, 1.25, None, "🍔 5X points (1.25% yield) on Dining spends.", 0.25),
+    ("in_sbi_elite", "5411", 0, 1.25, None, "🛒 5X points (1.25% yield) on Grocery spends.", 0.25),
+    ("in_sbi_elite", "5310", 0, 1.25, None, "💰 5X points (1.25% yield) on Departmental stores.", 0.25),
+    ("in_sbi_elite", "7832", 0, 1.25, None, "🎬 5X points (1.25% yield) on Movies.", 0.25),
+    ("in_sbi_elite", "6552", 1, 0, 0, "🚫 Rent payments earn zero rewards.", 0.25),
+
+    # SBI Prime
+    ("in_sbi_prime", "DEFAULT", 0, 0.5, None, "Base 2 reward points per Rs.100 (0.5% yield, 1 point = Rs.0.25).", 0.25),
+    ("in_sbi_prime", "5812", 0, 2.5, None, "🍔 10X points (2.5% yield) on Dining spends.", 0.25),
+    ("in_sbi_prime", "5411", 0, 2.5, None, "🛒 10X points (2.5% yield) on Groceries.", 0.25),
+    ("in_sbi_prime", "5310", 0, 2.5, None, "💰 10X points (2.5% yield) on Departmental store spends.", 0.25),
+    ("in_sbi_prime", "7832", 0, 2.5, None, "🎬 10X points (2.5% yield) on Movie tickets.", 0.25),
+    ("in_sbi_prime", "4900", 0, 3.75, None, "⚡ 15 reward points per Rs.100 spent on Utility bill payments (3.75% yield).", 0.25),
+    ("in_sbi_prime", "6552", 1, 0, 0, "🚫 Rent payments earn zero rewards.", 0.25),
+
+    # SBI SimplySAVE
+    ("in_sbi_simplysave_credit", "DEFAULT", 0, 0.25, None, "Base 1 reward point per Rs.100 spent (0.25% yield, 1 point = Rs.0.25).", 0.25),
+    ("in_sbi_simplysave_credit", "5812", 0, 2.5, None, "🍔 10X points (2.5% yield) on Dining spends.", 0.25),
+    ("in_sbi_simplysave_credit", "5411", 0, 2.5, None, "🛒 10X points (2.5% yield) on Grocery spends.", 0.25),
+    ("in_sbi_simplysave_credit", "5310", 0, 2.5, None, "💰 10X points (2.5% yield) on Departmental store spends.", 0.25),
+    ("in_sbi_simplysave_credit", "7832", 0, 2.5, None, "🎬 10X points (2.5% yield) on Movies spends.", 0.25),
+    ("in_sbi_simplysave_credit", "6552", 1, 0, 0, "🚫 Rent payments earn zero rewards.", 0.25),
+
+    # SBI BPCL Octane
+    ("in_sbi_bpcl_octane", "DEFAULT", 0, 0.25, None, "Base 1 reward point per Rs.100 spent (0.25% yield, 1 point = Rs.0.25).", 0.25),
+    ("in_sbi_bpcl_octane", "5541", 0, 6.25, 2500.0, "⛽ 25X points (6.25% reward yield) on BPCL fuel purchases. Capped at 2,500 points/month. Extra 1% surcharge waiver.", 0.25),
+    ("in_sbi_bpcl_octane", "5812", 0, 2.5, None, "🍔 10X points (2.5% yield) on Dining spends.", 0.25),
+    ("in_sbi_bpcl_octane", "5411", 0, 2.5, None, "🛒 10X points (2.5% yield) on Grocery spends.", 0.25),
+    ("in_sbi_bpcl_octane", "5310", 0, 2.5, None, "💰 10X points (2.5% yield) on Departmental store spends.", 0.25),
+    ("in_sbi_bpcl_octane", "7832", 0, 2.5, None, "🎬 10X points (2.5% yield) on Movies spends.", 0.25),
+    ("in_sbi_bpcl_octane", "6552", 1, 0, 0, "🚫 Rent payments earn zero rewards.", 0.25),
+
+    # SBI BPCL
+    ("in_sbi_bpcl", "DEFAULT", 0, 0.25, None, "Base 1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_sbi_bpcl", "5541", 0, 3.25, 1300.0, "⛽ 13X points (3.25% reward yield) on BPCL fuel purchases. Capped at 1,300 points/month. Extra 1% surcharge waiver.", 0.25),
+    ("in_sbi_bpcl", "5812", 0, 1.25, None, "🍔 5X points (1.25% yield) on Dining spends.", 0.25),
+    ("in_sbi_bpcl", "5411", 0, 1.25, None, "🛒 5X points (1.25% yield) on Grocery spends.", 0.25),
+    ("in_sbi_bpcl", "5310", 0, 1.25, None, "💰 5X points (1.25% yield) on Departmental store spends.", 0.25),
+    ("in_sbi_bpcl", "7832", 0, 1.25, None, "🎬 5X points (1.25% yield) on Movies spends.", 0.25),
+    ("in_sbi_bpcl", "6552", 1, 0, 0, "🚫 Rent payments earn zero rewards.", 0.25),
+
+    # SBI Air India Signature
+    ("in_sbi_air_india_signature", "DEFAULT", 0, 4.0, None, "Base 4 reward points per Rs.100 spent (4.0% yield when converted 1:1 to Air India miles).", 1.0),
+    ("in_sbi_air_india_signature", "4511", 0, 30.0, None, "✈️ 30 reward points per Rs.100 spent on direct Air India ticket bookings (30.0% yield).", 1.0),
+    ("in_sbi_air_india_signature", "6552", 1, 0, 0, "🚫 Rent payments earn zero rewards.", 1.0),
+
+    # SBI Pulse
+    ("in_sbi_pulse", "DEFAULT", 0, 0.5, None, "Base 2 reward points per Rs.100 spent (0.5% yield).", 0.25),
+    ("in_sbi_pulse", "5812", 0, 1.25, None, "🍔 5X points (1.25% yield) on Dining spends.", 0.25),
+    ("in_sbi_pulse", "5912", 0, 1.25, None, "💊 5X points (1.25% yield) on Pharmacy/Chemist spends.", 0.25),
+    ("in_sbi_pulse", "7832", 0, 1.25, None, "🎬 5X points (1.25% yield) on Movies spends.", 0.25),
+    ("in_sbi_pulse", "6552", 1, 0, 0, "🚫 Rent payments earn zero rewards.", 0.25),
+
+    # SBI IRCTC Premier
+    ("in_sbi_irctc_premium", "DEFAULT", 0, 0.5, None, "Base 2 reward points per Rs.100 spent (0.5% yield).", 0.25),
+    ("in_sbi_irctc_premium", "4112", 0, 10.0, None, "🚆 Up to 10% value back as reward points on AC rail tickets booked via irctc.co.in.", 0.25),
+    ("in_sbi_irctc_premium", "5812", 0, 0.75, None, "🍔 3X points (0.75% yield) on Dining spends.", 0.25),
+    ("in_sbi_irctc_premium", "4900", 0, 0.75, None, "⚡ 3X points (0.75% yield) on Electricity bill payments.", 0.25),
+    ("in_sbi_irctc_premium", "6552", 1, 0, 0, "🚫 Rent payments earn zero rewards.", 0.25),
+
+    # SBI Yatra
+    ("in_sbi_yatra", "DEFAULT", 0, 0.25, None, "Base 1 reward point per Rs.100 spent (0.25% yield).", 0.25),
+    ("in_sbi_yatra", "5812", 0, 1.5, None, "🍔 6X points (1.5% yield) on Dining spends.", 0.25),
+    ("in_sbi_yatra", "5411", 0, 1.5, None, "🛒 6X points (1.5% yield) on Grocery spends.", 0.25),
+    ("in_sbi_yatra", "5310", 0, 1.5, None, "💰 6X points (1.5% yield) on Departmental store spends.", 0.25),
+    ("in_sbi_yatra", "7832", 0, 1.5, None, "🎬 6X points (1.5% yield) on Movies spends.", 0.25),
+    ("in_sbi_yatra", "6552", 1, 0, 0, "🚫 Rent payments earn zero rewards.", 0.25),
 
     # Amazon Pay ICICI
     ("in_icici_amazon_pay_credit", "DEFAULT", 0, 1.0, None, "1% cashback on other offline and online spends.", 1.0),
@@ -556,6 +628,36 @@ def seed():
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)""",
         CARDS_DATA
     )
+
+    # Seed card-specific official product page links
+    premium_card_links = {
+        "in_sbi_cashback_credit": "https://www.sbicard.com/en/personal/credit-cards/shopping/cashback-sbi-card.page",
+        "in_sbi_simplyclick_credit": "https://www.sbicard.com/en/personal/credit-cards/shopping/simplyclick-sbi-card.page",
+        "in_sbi_simplysave_credit": "https://www.sbicard.com/en/personal/credit-cards/shopping/simplysave-sbi-card.page",
+        "in_sbi_aurum": "https://www.sbicard.com/en/personal/credit-cards/super-premium/aurum.page",
+        "in_sbi_elite": "https://www.sbicard.com/en/personal/credit-cards/lifestyle/sbi-card-elite.page",
+        "in_sbi_prime": "https://www.sbicard.com/en/personal/credit-cards/lifestyle/sbi-card-prime.page",
+        "in_sbi_pulse": "https://www.sbicard.com/en/personal/credit-cards/lifestyle/sbi-card-pulse.page",
+        "in_sbi_bpcl_octane": "https://www.sbicard.com/en/personal/credit-cards/travel/bpcl-sbi-card-octane.page",
+        "in_sbi_bpcl": "https://www.sbicard.com/en/personal/credit-cards/travel/bpcl-sbi-card.page",
+        "in_sbi_air_india_signature": "https://www.sbicard.com/en/personal/credit-cards/travel/air-india-sbi-signature-card.page",
+        "in_sbi_irctc_premium": "https://www.sbicard.com/en/personal/credit-cards/travel/irctc-sbi-card-premier.page",
+        "in_sbi_yatra": "https://www.sbicard.com/en/personal/credit-cards/travel/yatra-sbi-card.page",
+        "in_sbi_fabindia": "https://www.sbicard.com/en/personal/credit-cards/shopping/fabindia-sbi-card.page",
+        
+        "in_hdfc_infinia_metal": "https://www.hdfcbank.com/personal/pay/cards/credit-cards/infinia-credit-card-metal-edition",
+        "in_hdfc_diners_black": "https://www.hdfcbank.com/personal/pay/cards/credit-cards/diners-club-black-metal-edition",
+        "in_hdfc_regalia_gold": "https://www.hdfcbank.com/personal/pay/cards/credit-cards/regalia-gold-credit-card",
+        "in_hdfc_millennia_credit": "https://www.hdfcbank.com/personal/pay/cards/credit-cards/millennia-cards",
+        "in_hdfc_swiggy": "https://www.hdfcbank.com/personal/pay/cards/credit-cards/swiggy-hdfc-bank-credit-card",
+        
+        "in_axis_magnus_credit": "https://www.axisbank.com/retail/cards/credit-card/magnus-credit-card/features-benefits",
+        "in_axis_atlas_credit": "https://www.axisbank.com/retail/cards/credit-card/axis-bank-atlas-credit-card/features-benefits",
+        "in_axis_ace_credit": "https://www.axisbank.com/retail/cards/credit-card/ace-credit-card/features-benefits",
+        "in_axis_flipkart_credit": "https://www.axisbank.com/retail/cards/credit-card/flipkart-axisbank-creditcard/features-benefits"
+    }
+    for card_id, link in premium_card_links.items():
+        cursor.execute("UPDATE cards SET official_link = ? WHERE card_id = ?", (link, card_id))
 
     print("🌱 Seeding Reward Rules...")
     cursor.executemany(

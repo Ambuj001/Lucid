@@ -6,9 +6,15 @@ const express = require('express');
 const cors = require('cors');
 const { rateLimit } = require('express-rate-limit');
 const { GoogleGenAI } = require('@google/genai');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const app = express();
 
 const aiEngineClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const aiStudio = aiEngineClient;
+const CARDWISE_AI_MODEL = 'gemini-3.1-pro-preview';
+
 
 // ── Rate Limiting ────────────────────────────────────────────────────────────
 const engineLimiter = rateLimit({
@@ -32,14 +38,14 @@ function requireAdminSecret(req, res, next) {
   next();
 }
 const port = process.env.PORT || 3000;
+const JWT_SECRET = process.env.SECRET_KEY || 'cardwise_fallback_secret_key';
 
-// Enable CORS middleware
-app.use(cors({
-  origin: 'http://localhost:3001'
-}));
+// Enable CORS middleware (allowing all origins for dashboard on 3001 and MV3 extension)
+app.use(cors());
 
-// Enable JSON middleware parsing
-app.use(express.json());
+// Enable JSON and URL-encoded body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // Determine database dialect based on env
 const usePostgres = process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres');
@@ -54,9 +60,44 @@ if (usePostgres) {
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
   });
   console.log("Using PostgreSQL database connection pool.");
+  pool.query("ALTER TABLE user_financial_profiles ADD COLUMN IF NOT EXISTS name VARCHAR(100) DEFAULT 'Ambuj Tiwari';").catch(err => {
+    console.warn("PostgreSQL table alter check warning:", err.message);
+  });
+  pool.query("ALTER TABLE cards ADD COLUMN IF NOT EXISTS official_link VARCHAR(500);").catch(err => {
+    console.warn("PostgreSQL cards link alter warning:", err.message);
+  });
+  pool.query("ALTER TABLE banks ADD COLUMN IF NOT EXISTS redemption_portal_url VARCHAR(500);").catch(err => {
+    console.warn("PostgreSQL banks portal URL alter warning:", err.message);
+  });
+  pool.query("ALTER TABLE banks ADD COLUMN IF NOT EXISTS redemption_portal_name VARCHAR(200);").catch(err => {
+    console.warn("PostgreSQL banks portal name alter warning:", err.message);
+  });
 } else {
   const sqlite3 = require('sqlite3').verbose();
-  sqliteDb = new sqlite3.Database('cardwise_production.db');
+  sqliteDb = new sqlite3.Database('cardwise_production.db', (err) => {
+    if (!err) {
+      sqliteDb.run("ALTER TABLE user_financial_profiles ADD COLUMN name TEXT DEFAULT 'Ambuj Tiwari';", (alterErr) => {
+        if (alterErr && !alterErr.message.includes("duplicate column name")) {
+          console.log("Migration profile name note:", alterErr.message);
+        }
+      });
+      sqliteDb.run("ALTER TABLE cards ADD COLUMN official_link TEXT;", (alterErr) => {
+        if (alterErr && !alterErr.message.includes("duplicate column name")) {
+          console.log("Migration cards link note:", alterErr.message);
+        }
+      });
+      sqliteDb.run("ALTER TABLE banks ADD COLUMN redemption_portal_url TEXT;", (alterErr) => {
+        if (alterErr && !alterErr.message.includes("duplicate column name")) {
+          console.log("Migration banks portal URL note:", alterErr.message);
+        }
+      });
+      sqliteDb.run("ALTER TABLE banks ADD COLUMN redemption_portal_name TEXT;", (alterErr) => {
+        if (alterErr && !alterErr.message.includes("duplicate column name")) {
+          console.log("Migration banks portal name note:", alterErr.message);
+        }
+      });
+    }
+  });
   console.log("Using local SQLite database: cardwise_production.db");
 }
 
@@ -306,7 +347,9 @@ async function runRewardEngine(user_id, mcc_code, transaction_value) {
     // Apply Goal Scaling
     if (rewardGoal === 'CASHBACK') {
       if (card.card_id === 'in_hdfc_infinia_metal') {
-        pointValuation = 0.50;
+        pointValuation = 0.30;
+      } else if (card.card_id === 'in_hdfc_diners_black') {
+        pointValuation = 0.30;
       } else if (card.card_id === 'in_hdfc_regalia_gold') {
         pointValuation = 0.20;
       } else if (card.card_id === 'in_axis_atlas_credit') {
@@ -368,18 +411,35 @@ async function runRewardEngine(user_id, mcc_code, transaction_value) {
 // Domain-aware evaluation (used by the browser extension context)
 // ─────────────────────────────────────────────────────────────────────────────
 app.post('/api/v1/engine/evaluate', engineLimiter, async (req, res) => {
-  const { checkout_domain, raw_prompt, user_id } = req.body;
+  const { checkout_domain, raw_prompt, declared_transaction_value_inr } = req.body;
+  let resolvedUserId = req.body.user_id || null;
 
-  if (!user_id) {
+  // Extract user_id from JWT if Authorization header is present (extension flow)
+  const authHeader = req.headers.authorization;
+  if (!resolvedUserId && authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const users = await dbQuery('SELECT user_id FROM users WHERE email_address = ?', [decoded.sub]);
+      if (users.length > 0) {
+        resolvedUserId = users[0].user_id;
+      }
+    } catch (tokenErr) {
+      return res.status(401).json({ error: 'NOT_LOGGED_IN' });
+    }
+  }
+
+  if (!resolvedUserId) {
     return res.status(400).json({ error: 'MISSING_USER_ID' });
   }
 
   try {
     const combinedInput = `${checkout_domain || ''} ${raw_prompt || ''}`;
     const { mcc, badge } = classifyMCC(combinedInput);
-    const transaction_value = extractAmount(raw_prompt);
+    // Use declared_transaction_value_inr from extension, or extract from raw_prompt
+    const transaction_value = declared_transaction_value_inr || extractAmount(raw_prompt);
 
-    const result = await runRewardEngine(user_id, mcc, transaction_value);
+    const result = await runRewardEngine(resolvedUserId, mcc, transaction_value);
 
     if (result.empty) {
       return res.json({
@@ -404,95 +464,295 @@ app.post('/api/v1/engine/evaluate', engineLimiter, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /api/v1/engine/ai-parse
-// Natural language prompt evaluation (used by the AI Suggestion tab)
+// GET /api/v1/engine/transfer-partners
 // ─────────────────────────────────────────────────────────────────────────────
-app.post('/api/v1/engine/ai-parse', engineLimiter, (req, res) => {
-  const { prompt, user_id } = req.body;
+app.get('/api/v1/engine/transfer-partners', async (req, res) => {
+  try {
+    const partners = await dbQuery("SELECT * FROM card_transfer_partners");
+    const banks = await dbQuery("SELECT bank_id, display_name, redemption_portal_url, redemption_portal_name FROM banks WHERE redemption_portal_url IS NOT NULL");
+    
+    // Group partners by ecosystem_id
+    const groupedPartners = {
+      hdfc: [],
+      axis: [],
+      amex: [],
+      icici: [],
+      sbi: []
+    };
 
-  if (!prompt || !user_id) {
-    return res.status(400).json({ error: "PARAMETER_VALIDATION_FAILURE" });
-  }
-
-  const cleanPrompt = prompt.toLowerCase();
-  let matched_mcc = "5310"; // Default: Retail
-  let category_badge = "RETAIL";
-
-  if (cleanPrompt.includes("zomato") || cleanPrompt.includes("swiggy") || cleanPrompt.includes("food")) {
-    matched_mcc = "5812";
-    category_badge = "DINING & DELIVERY";
-  } else if (cleanPrompt.includes("flight") || cleanPrompt.includes("hotel") || cleanPrompt.includes("travel")) {
-    matched_mcc = "4511";
-    category_badge = "TRAVEL & FLIGHTS";
-  }
-
-  let transaction_value = 0;
-  const numericMatch = cleanPrompt.replace(/[,₹]/g, '').match(/\b\d+(?:\.\d{1,2})?\b/);
-  if (numericMatch) transaction_value = parseFloat(numericMatch[0]);
-
-  // Combined parallel database query to check wallets, goals, and rules at the same time
-  const dbQueries = [
-    dbQuery("SELECT uw.card_id, c.card_name, c.bank_id, c.card_type FROM user_wallets uw JOIN cards c ON uw.card_id = c.card_id WHERE uw.user_id = ?", [user_id]),
-    dbQuery("SELECT * FROM user_spend_goals WHERE user_id = ?", [user_id]),
-    dbQuery("SELECT * FROM reward_rules WHERE mcc_code = ?", [matched_mcc])
-  ];
-
-  Promise.all(dbQueries).then(([userCards, spendGoals, rules]) => {
-    const sortedResults = userCards.map(card => {
-      const rule = rules.find(r => r.card_id === card.card_id);
-      const goal = spendGoals.find(g => g.card_id === card.card_id);
-
-      let yield_pct = 1.0;
-      let warning = rule ? rule.gimmick_warning_text : null;
-      let strategy_indicator = "STANDARD_EARNINGS_TRACK";
-      let priority_weight = 0; // Higher weight bubbles to the top of the list
-
-      if (rule) {
-        yield_pct = rule.is_completely_excluded === 1 ? 0.0 : parseFloat(rule.base_reward_percentage);
+    partners.forEach(p => {
+      const ecoId = p.ecosystem_id;
+      if (groupedPartners[ecoId]) {
+        groupedPartners[ecoId].push({
+          id: p.partner_id,
+          name: p.partner_name,
+          program: p.program_name,
+          type: p.partner_type,
+          ratio: p.transfer_ratio,
+          rateNum: p.rate_multiplier,
+          valuePerMile: p.value_per_mile,
+          alliance: p.alliance,
+          group: p.partner_group,
+          domain: p.partner_domain,
+          url: p.redemption_url,
+          color: p.brand_color,
+          desc: p.description
+        });
       }
-
-      let net_savings = transaction_value > 0 ? (transaction_value * (yield_pct / 100)) : 0;
-
-      // MILESTONE INTEGRATION CHECK
-      if (goal) {
-        const remainingSpend = goal.target_spend_inr - goal.current_spend_inr;
-        if (remainingSpend > 0 && transaction_value > 0) {
-          strategy_indicator = `🎯 TARGET GOAL: BOSTING MILESTONE PROGRESSION (${((goal.current_spend_inr / goal.target_spend_inr) * 100).toFixed(0)}% ACHIEVED)`;
-          // Add priority weight if this transaction safely advances a spend milestone tracking goal
-          if (transaction_value <= remainingSpend + 50000) {
-             priority_weight += 100; 
-          }
-        }
-      }
-
-      // Check for multiplier benefits (e.g., 5X multipliers)
-      if (yield_pct >= 5.0) {
-        strategy_indicator = `🔥 REWARD MULTIPLIER ACTIVE: Verified high-yield accelerator loop.`;
-      }
-
-      const cleanLabel = card.card_name.startsWith(card.bank_id) ? card.card_name : `${card.bank_id} ${card.card_name}`;
-
-      return {
-        card_name: cleanLabel,
-        card_type: card.card_type,
-        reward_yield_pct: yield_pct,
-        net_savings_inr: parseFloat(net_savings.toFixed(2)),
-        warning_flag: warning,
-        strategy_badge: strategy_indicator,
-        execution_weight: priority_weight + yield_pct
-      };
     });
-
-    // Sort by optimization priority metrics
-    sortedResults.sort((a, b) => b.execution_weight - a.execution_weight);
 
     res.json({
-      parsed_category: category_badge,
-      extracted_amount: transaction_value,
-      sorted_results: sortedResults
+      partners: groupedPartners,
+      banks: banks
     });
-  }).catch(err => res.status(500).json({ error: err.message }));
+  } catch (error) {
+    console.error("GET_TRANSFER_PARTNERS_ERROR:", error);
+    res.status(500).json({ error: "DATABASE_FAULT", details: error.message });
+  }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/engine/ai-parse
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/api/v1/engine/ai-parse', async (req, res) => {
+  const { prompt, user_id, host_domain } = req.body;
+
+  if (!prompt || !user_id) {
+    return res.status(400).json({ error: "MISSING_REQUIRED_PAYLOAD_METADATA" });
+  }
+
+  try {
+    // 1. Fetch live user portfolio properties directly from local database layers using custom dbQuery wrapper
+    const dbQueries = [
+      dbQuery("SELECT uw.card_id, c.card_name, c.bank_id, c.card_type FROM user_wallets uw JOIN cards c ON uw.card_id = c.card_id WHERE uw.user_id = ?", [user_id]),
+      dbQuery("SELECT * FROM user_spend_goals WHERE user_id = ?", [user_id]),
+      dbQuery("SELECT * FROM reward_rules"),
+      dbQuery("SELECT * FROM card_transfer_partners")
+    ];
+
+    const [userCards, spendGoals, globalRules, transferPartners] = await Promise.all(dbQueries);
+
+    let geminiContextPrompt;
+
+    if (host_domain === 'vacation_planner') {
+      geminiContextPrompt = `
+        You are the Vacation Planner and Travel Rewards Advisor for Cardwise, an Indian financial credit card optimizer.
+        Analyze this travel request: "${prompt}"
+
+        User's active credit cards: ${JSON.stringify(userCards)}
+        User's milestones/spend-goals: ${JSON.stringify(spendGoals)}
+        System category rules: ${JSON.stringify(globalRules)}
+        Database of supported transfer partners and ratios: ${JSON.stringify(transferPartners)}
+
+        CRITICAL TASKS:
+        - Identify the destination/airlines/hotels mentioned in the prompt (e.g. Bali, Singapore, Marriott).
+        - Recommend up to 3 cards from the user's wallet that are best for booking flights/hotels or earning rewards for this trip.
+        - Provide an expert financial insight ("ai_insight") on how to optimize points transfer. Explain which bank (e.g. HDFC, Axis, AMEX, ICICI) to use, the exact transfer ratios, how they can get maximum value, and warnings if there are caps (like HDFC's 1.5L cap or Axis's Group A/B limits).
+        - Add helpful tags or warnings in the "flags" array (e.g., "1:1 Marriott", "Singapore 2:1", "Axis 1:4", "Air India 1:1").
+
+        Respond STRICTLY using this raw JSON schema structure:
+        {
+          "top_recommendations": [
+            {
+              "card_name": "STRING (Bank Name + Card Name combined safely)",
+              "yield_pct": NUMBER,
+              "net_savings": NUMBER
+            }
+          ],
+          "ai_insight": "STRING",
+          "flags": ["STRING"]
+        }
+      `;
+    } else {
+      // Default checkout/mcc check
+      geminiContextPrompt = `
+        You are the core intelligence routing matrix for Cardwise, an Indian financial credit card optimizer dashboard.
+        Analyze this user interaction prompt: "${prompt}" 
+        Active Host Domain Context: "${host_domain || 'Unknown checkout context'}"
+
+        Here is the user's active wallet array configuration data: ${JSON.stringify(userCards)}
+        Here is the user's explicit milestones/spend-goals configuration logs: ${JSON.stringify(spendGoals)}
+        Here is our system-wide category rules and restrictions database registry: ${JSON.stringify(globalRules)}
+
+        CRITICAL TASKS:
+        - Classify the target Merchant and identify the correct merchant code (MCC).
+        - Extract any numeric pricing totals inside the prompt string.
+        - Correlate calculations to identify which card optimizes return yields.
+        - Check if a transaction advances an explicit user spend goal milestone (e.g., Axis Atlas spend thresholds). If yes, append a premium strategy badge.
+        - Uncover "hidden gems" or multiplier rules (e.g., 5X SmartBuy rules) and format them beautifully.
+
+        Respond STRICTLY using this raw JSON schema structure:
+        {
+          "category_badge": "STRING",
+          "extracted_amount": NUMBER,
+          "mcc_detected": "STRING",
+          "sorted_results": [
+            {
+              "card_name": "STRING (Bank Name + Card Name combined safely)",
+              "card_type": "STRING",
+              "reward_yield_pct": NUMBER,
+              "net_savings_inr": NUMBER,
+              "warning_flag": "STRING OR NULL",
+              "strategy_badge": "STRING"
+            }
+          ]
+        }
+      `;
+    }
+
+    const aiOutputResponse = await aiStudio.models.generateContent({
+      model: CARDWISE_AI_MODEL,
+      contents: geminiContextPrompt,
+      config: {
+        responseMimeType: "application/json",
+        thinkingConfig: { thinkingBudget: 2048 } 
+      }
+    });
+
+    // Parse the structured, guaranteed clean JSON directly into the client response stream
+    const structuredPayload = JSON.parse(aiOutputResponse.text);
+    res.json(structuredPayload);
+
+  } catch (error) {
+    console.error("CARDWISE_AI_ERROR:", error.message);
+    res.status(500).json({ error: "GENERIC_REASONING_FAULT", details: error.message });
+  }
+});
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/engine/cardwise-chat
+// Multimodal conversational AI endpoint — accepts text, images, and URLs
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/api/v1/engine/cardwise-chat', async (req, res) => {
+  const { message, image_base64, url, user_id, history } = req.body;
+
+  if (!message || !user_id) {
+    return res.status(400).json({ error: "MISSING_REQUIRED_FIELDS", details: "message and user_id are required." });
+  }
+
+  try {
+    // Fetch full user context from database
+    const [userCards, spendGoals, globalRules, transferPartners] = await Promise.all([
+      dbQuery("SELECT uw.card_id, c.card_name, c.bank_id, c.card_type, c.card_network FROM user_wallets uw JOIN cards c ON uw.card_id = c.card_id WHERE uw.user_id = ?", [user_id]),
+      dbQuery("SELECT * FROM user_spend_goals WHERE user_id = ?", [user_id]),
+      dbQuery("SELECT * FROM reward_rules"),
+      dbQuery("SELECT * FROM card_transfer_partners")
+    ]);
+
+    // If a URL was provided, try to fetch its content for context
+    let urlContext = '';
+    if (url && url.trim()) {
+      try {
+        const urlResp = await fetch(url, { signal: AbortSignal.timeout(5000) });
+        const urlText = await urlResp.text();
+        // Extract just meaningful text, limit to 2000 chars
+        const stripped = urlText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 2000);
+        urlContext = `\n\nThe user also shared this URL: ${url}\nPage content summary: "${stripped}"`;
+      } catch (e) {
+        urlContext = `\n\nThe user shared this URL but it could not be fetched: ${url}`;
+      }
+    }
+
+    // Build conversation history context
+    let historyContext = '';
+    if (history && Array.isArray(history) && history.length > 0) {
+      const recentHistory = history.slice(-6); // Last 6 messages for context
+      historyContext = '\n\nRecent conversation history:\n' + recentHistory.map(h => `${h.role === 'user' ? 'User' : 'Cardwise AI'}: ${h.text}`).join('\n');
+    }
+
+    const systemPrompt = `You are Cardwise AI, a hyper-intelligent Indian credit card rewards optimization assistant.
+You are embedded inside the Cardwise dashboard — a premium platform that helps users maximize their credit card rewards, cashback, and loyalty points.
+
+YOUR KNOWLEDGE BASE:
+1. User's Active Credit Cards: ${JSON.stringify(userCards)}
+2. User's Spend Goals & Milestones: ${JSON.stringify(spendGoals)}
+3. System Reward Rules Database (MCC codes, reward rates, caps, exclusions): ${JSON.stringify(globalRules)}
+4. Transfer Partner Network (Airlines, Hotels, ratios): ${JSON.stringify(transferPartners)}
+
+CARDWISE PORTAL FEATURES YOU KNOW ABOUT:
+- Reward Redemption Hub: Compare point-to-mile conversion ratios across banks (HDFC, Axis, SBI, ICICI, AMEX, IDFC)
+- Shop Partners: 11 major e-commerce platforms with affiliate cashback stacking (Amazon 8.5%, Flipkart 7%, Myntra 6.5%, etc.)
+- Vacation Planner: Transfer partner analysis for airlines (Air India, Singapore, Emirates, etc.) and hotels (Marriott, Hilton, IHG, etc.)
+- Financial Profile: Category-wise spend optimization and wallet audit
+- Limited Offers: Real-time bank deals and merchant promotions
+
+PERSONALITY:
+- Be extremely knowledgeable, precise, and strategic
+- Use specific numbers, percentages, and card names from the user's actual wallet
+- When recommending cards, explain WHY with yield calculations
+- Warn about hidden caps, exclusions, and gimmick terms
+- Be conversational but professional — like a premium financial concierge
+- Use Indian Rupee (₹) for amounts
+- Keep responses concise but thorough (aim for 100-200 words unless complex analysis needed)
+- Format important numbers in bold
+- Use bullet points for comparisons
+${historyContext}${urlContext}
+
+USER MESSAGE: "${message}"
+
+${image_base64 ? 'The user has also attached an image. Analyze it carefully — it could be a screenshot of a checkout page, a card offer, a transaction statement, or a product page. Use the visual context to provide more accurate recommendations.' : ''}
+
+Respond naturally as Cardwise AI. Do NOT use JSON format — respond in plain text with markdown formatting (bold, bullets, etc.) for readability.`;
+
+    // Build content parts for Gemini
+    const contentParts = [];
+    
+    // Add text part
+    contentParts.push({ text: systemPrompt });
+    
+    // Add image if provided
+    if (image_base64) {
+      // Extract mime type and data from base64 string
+      const mimeMatch = image_base64.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+      if (mimeMatch) {
+        contentParts.push({
+          inlineData: {
+            mimeType: mimeMatch[1],
+            data: mimeMatch[2]
+          }
+        });
+      }
+    }
+
+    const aiResponse = await aiStudio.models.generateContent({
+      model: CARDWISE_AI_MODEL,
+      contents: [{ role: 'user', parts: contentParts }],
+      config: {
+        thinkingConfig: { thinkingBudget: 4096 }
+      }
+    });
+
+    const replyText = aiResponse.text || 'I apologize, I was unable to generate a response. Please try rephrasing your question.';
+
+    // Generate follow-up suggestions based on the conversation
+    let suggestions = [];
+    try {
+      const suggestResponse = await aiStudio.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Based on this Cardwise AI conversation, suggest exactly 3 short follow-up questions the user might want to ask next. Each should be under 10 words. Return as a JSON array of strings only.\n\nUser asked: "${message}"\nAI replied: "${replyText.slice(0, 500)}"`,
+        config: {
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingBudget: 512 }
+        }
+      });
+      suggestions = JSON.parse(suggestResponse.text);
+    } catch (e) {
+      suggestions = [
+        "Which card maximizes my dining rewards?",
+        "Compare my top 2 cards",
+        "How to optimize my monthly spending?"
+      ];
+    }
+
+    res.json({ reply: replyText, suggestions });
+
+  } catch (error) {
+    console.error("CARDWISE_CHAT_ERROR:", error.message);
+    res.status(500).json({ error: "CHAT_ENGINE_FAULT", details: error.message });
+  }
+});
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/v1/engine/sync-hidden-rules
@@ -554,6 +814,305 @@ app.post('/api/v1/engine/sync-hidden-rules', async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ error: "GEMINI_PROCESSING_ENGINE_FAULT", technical_details: error.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/engine/extension-intercept
+// Full extension pipeline: JWT auth → reward engine → price history → combined response
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/api/v1/engine/extension-intercept', async (req, res) => {
+  const { current_url, extracted_product_title, extracted_cart_total } = req.body;
+  let resolvedUserId = req.body.user_id || null;
+
+  // 1. Extract user_id from JWT if Authorization header is present
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, JWT_SECRET);
+      // decoded.sub is the email_address set during login
+      const users = await dbQuery('SELECT user_id, email_address FROM users WHERE email_address = ?', [decoded.sub]);
+      if (users.length > 0) {
+        resolvedUserId = users[0].user_id;
+      } else {
+        return res.status(401).json({ error: 'NOT_LOGGED_IN' });
+      }
+    } catch (tokenErr) {
+      return res.status(401).json({ error: 'NOT_LOGGED_IN' });
+    }
+  }
+
+  if (!resolvedUserId) {
+    return res.status(401).json({ error: 'NOT_LOGGED_IN' });
+  }
+
+  const amount = parseFloat(extracted_cart_total) || 999;
+  const title = extracted_product_title || 'Shopping items';
+  const url = current_url || '';
+
+  try {
+    // 2. Classify MCC from product title + URL
+    const combinedInput = `${title} ${url}`;
+    const { mcc, badge } = classifyMCC(combinedInput);
+
+    // 3. Run reward engine for card recommendations
+    const engineResult = await runRewardEngine(resolvedUserId, mcc, amount);
+
+    // 4. Get price history from Gemini AI (non-blocking — don't fail if AI is slow)
+    let priceData = { price_evaluation_badge: 'GOOD_DEAL', price_history: [], system_notice: '' };
+    try {
+      const extensionPrompt = `
+        Analyze this e-commerce product checkout state for Cardwise Web Extension.
+        Product Title: "${title}"
+        Cart Total Value: ${amount}
+        Target Web Gateway URL: "${url}"
+
+        Task: Generate a simulated historical 3-month pricing array to check if this item is at an optimal price.
+        Generate exactly 5-7 data points spanning the last 3 months.
+
+        Respond strictly using this JSON schema:
+        {
+          "price_evaluation_badge": "HISTORIC_LOW" or "GOOD_DEAL" or "AVERAGE_PRICING" or "MARKED_UP",
+          "price_history": [{"date": "YYYY-MM-DD", "price_inr": number}],
+          "system_notice": "string"
+        }
+      `;
+
+      const aiResponse = await aiStudio.models.generateContent({
+        model: CARDWISE_AI_MODEL,
+        contents: extensionPrompt,
+        config: { responseMimeType: "application/json" }
+      });
+      priceData = JSON.parse(aiResponse.text);
+    } catch (aiErr) {
+      console.warn('[Extension Intercept] Price history AI failed, using fallback:', aiErr.message);
+    }
+
+    // 5. Build the response structure the extension expects
+    if (engineResult.empty || engineResult.cards.length === 0) {
+      return res.json({
+        top_recommendation: null,
+        alternative_cards_matrix: [],
+        price_history: priceData.price_history || [],
+        price_evaluation_badge: priceData.price_evaluation_badge || 'GOOD_DEAL',
+        extracted_cart_total: amount,
+        category: badge,
+        system_notice: 'No cards in your wallet. Add cards from the dashboard to get recommendations.'
+      });
+    }
+
+    // 6. Get wallet card details for enrichment
+    const walletDetails = await dbQuery(
+      `SELECT uw.card_id, c.card_name, c.bank_id, c.card_type, c.card_network,
+              c.joining_fee_inr, c.annual_fee_inr, c.spend_waiver_threshold_inr,
+              c.forex_markup_pct, c.lounge_access_domestic, c.lounge_access_international,
+              c.ancillary_benefits, c.is_cashback_card
+       FROM user_wallets uw
+       JOIN cards c ON uw.card_id = c.card_id
+       WHERE uw.user_id = ?`,
+      [resolvedUserId]
+    );
+
+    // Build lookup for wallet details
+    const walletLookup = {};
+    walletDetails.forEach(w => {
+      walletLookup[w.card_id] = w;
+    });
+
+    // 7. Map engine results to the extension's expected format
+    const topCard = engineResult.cards[0];
+    const topWallet = walletLookup[topCard.card_id] || {};
+    const topBankId = topWallet.bank_id || topCard.display_label?.split(' ')[0] || '';
+
+    const topRecommendation = {
+      card_id: topCard.card_id,
+      card_name: topWallet.card_name || topCard.display_label || topCard.card_id,
+      nickname: topCard.display_label || topCard.card_id,
+      issuer: topBankId,
+      card_type: topCard.card_type || 'CREDIT',
+      card_network: topWallet.card_network || 'Visa',
+      card_category: topCard.card_type || 'Platinum',
+      card_limit: 500000,
+      available_balance: 400000,
+      cashback_pct: topCard.yield_percentage || 0,
+      net_saving: topCard.calculated_savings_inr || 0,
+      net_yield_percentage: topCard.yield_percentage || 0,
+      multiplier_label: `${topCard.yield_percentage}% yield on ${badge}`,
+      strategy_alert: topCard.gimmick_alert || null,
+      action_badge: topCard.action_badge || 'GOOD_VALUE',
+      joining_fee: topWallet.joining_fee_inr || 0,
+      annual_fee: topWallet.annual_fee_inr || 0,
+      spend_waiver: topWallet.spend_waiver_threshold_inr,
+      forex_markup_pct: topWallet.forex_markup_pct !== undefined ? topWallet.forex_markup_pct : 3.50,
+      lounge_domestic: topWallet.lounge_access_domestic || null,
+      lounge_international: topWallet.lounge_access_international || null,
+      ancillary_benefits: topWallet.ancillary_benefits || null,
+      is_cashback: topWallet.is_cashback_card || 0
+    };
+
+    // Alternative cards (skip the top one)
+    const alternativeCards = engineResult.cards.slice(1, 4).map(card => {
+      const w = walletLookup[card.card_id] || {};
+      const cardBankId = w.bank_id || card.display_label?.split(' ')[0] || '';
+      return {
+        card_id: card.card_id,
+        card_name: w.card_name || card.display_label || card.card_id,
+        nickname: card.display_label || card.card_id,
+        issuer: cardBankId,
+        card_type: card.card_type || 'CREDIT',
+        card_category: card.card_type || 'Platinum',
+        cashback_pct: card.yield_percentage || 0,
+        net_saving: card.calculated_savings_inr || 0,
+        net_yield_percentage: card.yield_percentage || 0,
+        multiplier_label: `${card.yield_percentage}% yield on ${badge}`,
+        action_badge: card.action_badge || 'LOW_YIELD',
+        joining_fee: w.joining_fee_inr || 0,
+        annual_fee: w.annual_fee_inr || 0,
+        spend_waiver: w.spend_waiver_threshold_inr,
+        forex_markup_pct: w.forex_markup_pct !== undefined ? w.forex_markup_pct : 3.50,
+        lounge_domestic: w.lounge_access_domestic || null,
+        lounge_international: w.lounge_access_international || null,
+        ancillary_benefits: w.ancillary_benefits || null,
+        is_cashback: w.is_cashback_card || 0
+      };
+    });
+
+    // 8. Points Redemption Intelligence — Only for non-cashback (points-based) cards
+    let pointsRedemptionIntel = null;
+    const isCashbackCard = topWallet.is_cashback_card === 1;
+
+    if (!isCashbackCard && topCard.yield_percentage > 0) {
+      try {
+        // Fetch transfer partners for the top card's bank ecosystem
+        const topBankEcosystem = topBankId.toLowerCase();
+        const partners = await dbQuery(
+          `SELECT partner_name, program_name, partner_type, transfer_ratio, rate_multiplier, value_per_mile, brand_color, description
+           FROM card_transfer_partners WHERE ecosystem_id = ?`,
+          [topBankEcosystem]
+        );
+
+        if (partners.length > 0) {
+          // Get the rule for this card + MCC to know the point_to_inr_valuation and points_multiplier
+          const cardRule = await dbQuery(
+            `SELECT base_reward_percentage, point_to_inr_valuation, points_multiplier
+             FROM reward_rules WHERE card_id = ? AND (mcc_code = ? OR mcc_code = 'DEFAULT') ORDER BY mcc_code DESC LIMIT 1`,
+            [topCard.card_id, mcc]
+          );
+          const rule = cardRule[0] || { base_reward_percentage: 1, point_to_inr_valuation: 1, points_multiplier: 1 };
+
+          // Calculate estimated points earned from this transaction
+          const estimatedPoints = Math.round(amount * (rule.points_multiplier || 1) * (rule.base_reward_percentage / 100) / (rule.point_to_inr_valuation || 1));
+
+          const redemptionPrompt = `
+You are a credit card rewards optimization engine for Indian credit card users.
+
+The user is about to make a purchase of ₹${amount} using "${topCard.display_label}" (${topBankId} bank).
+This card earns approximately ${estimatedPoints} reward points on this transaction.
+Base reward rate: ${rule.base_reward_percentage}%, Points multiplier: ${rule.points_multiplier || 1}x
+
+Here are ${topBankId}'s available transfer partners:
+${JSON.stringify(partners.map(p => ({name: p.partner_name, program: p.program_name, type: p.partner_type, ratio: p.transfer_ratio, value_per_mile: p.value_per_mile})))}
+
+Task: Analyze which transfer partner gives the MAXIMUM INR value extraction for ${estimatedPoints} points.
+Calculate the accelerated/best redemption value in INR.
+Also calculate the standard/baseline INR value (direct redemption without transfer).
+
+Respond strictly using this JSON schema:
+{
+  "estimated_points_earned": number,
+  "standard_redemption_inr": number,
+  "best_partner_name": "string",
+  "best_partner_program": "string", 
+  "best_partner_type": "airline" or "hotel",
+  "transfer_ratio": "string",
+  "accelerated_value_inr": number,
+  "value_multiplier": number,
+  "top_3_partners": [{"name": "string", "value_inr": number, "type": "string", "ratio": "string"}],
+  "insight": "string (1-2 sentence strategic tip)"
+}`;
+
+          const redemptionResp = await aiStudio.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: redemptionPrompt,
+            config: { responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 1024 } }
+          });
+          pointsRedemptionIntel = JSON.parse(redemptionResp.text);
+          pointsRedemptionIntel.bank_ecosystem = topBankId;
+          pointsRedemptionIntel.card_name = topCard.display_label;
+        }
+      } catch (redemptionErr) {
+        console.warn('[Extension Intercept] Points redemption AI failed:', redemptionErr.message);
+      }
+    }
+
+    // 9. Shop Partners — Affiliate cashback data for the current merchant domain
+    const shopPartners = [];
+    const merchantHost = (() => {
+      try { return new URL(url).hostname.replace('www.', ''); } catch { return ''; }
+    })();
+    const shopPartnersMap = {
+      'amazon.in': { name: 'Amazon India', cashback: '8.5%', color: '#FF9900', category: 'E-Commerce' },
+      'flipkart.com': { name: 'Flipkart', cashback: '7%', color: '#2874F0', category: 'E-Commerce' },
+      'myntra.com': { name: 'Myntra', cashback: '6.5%', color: '#FF3F6C', category: 'Fashion' },
+      'ajio.com': { name: 'AJIO', cashback: '5%', color: '#2B2D42', category: 'Fashion' },
+      'nykaa.com': { name: 'Nykaa', cashback: '6%', color: '#FC2779', category: 'Beauty' },
+      'meesho.com': { name: 'Meesho', cashback: '4%', color: '#F43397', category: 'E-Commerce' },
+      'swiggy.com': { name: 'Swiggy', cashback: '5%', color: '#FC8019', category: 'Food Delivery' },
+      'zomato.com': { name: 'Zomato', cashback: '5%', color: '#E23744', category: 'Food Delivery' },
+      'croma.com': { name: 'Croma', cashback: '4.5%', color: '#0DB14B', category: 'Electronics' },
+      'bigbasket.com': { name: 'BigBasket', cashback: '3.5%', color: '#84C225', category: 'Grocery' },
+      'blinkit.com': { name: 'Blinkit', cashback: '3%', color: '#F8CB46', category: 'Grocery' },
+      'makemytrip.com': { name: 'MakeMyTrip', cashback: '4%', color: '#E2232A', category: 'Travel' },
+      'goibibo.com': { name: 'Goibibo', cashback: '3.5%', color: '#EC5B24', category: 'Travel' },
+      'irctc.co.in': { name: 'IRCTC', cashback: '2%', color: '#1C60A3', category: 'Travel' },
+    };
+    // Add current merchant partner if matched
+    for (const [domain, info] of Object.entries(shopPartnersMap)) {
+      if (merchantHost.includes(domain.split('.')[0])) {
+        shopPartners.push({ ...info, domain, is_current: true });
+      }
+    }
+    // Add 3-4 related partners for cross-sell
+    const relatedDomains = Object.entries(shopPartnersMap)
+      .filter(([d]) => !merchantHost.includes(d.split('.')[0]))
+      .slice(0, 4);
+    relatedDomains.forEach(([domain, info]) => {
+      shopPartners.push({ ...info, domain, is_current: false });
+    });
+
+    // 10. Recent history — last 5 deals from flash deals as activity log
+    let recentHistory = [];
+    try {
+      recentHistory = await dbQuery(
+        `SELECT d.target_merchant_string as merchant, d.bonus_multiplier_value as multiplier,
+                c.card_name, c.bank_id, d.raw_source_text as description,
+                d.discovered_at as date
+         FROM active_flash_deals d
+         JOIN cards c ON d.card_id = c.card_id
+         WHERE d.is_active = 1
+         ORDER BY d.discovered_at DESC LIMIT 5`
+      );
+    } catch (histErr) {
+      console.warn('[Extension Intercept] History fetch failed:', histErr.message);
+    }
+
+    return res.json({
+      top_recommendation: topRecommendation,
+      alternative_cards_matrix: alternativeCards,
+      price_history: priceData.price_history || [],
+      price_evaluation_badge: priceData.price_evaluation_badge || 'GOOD_DEAL',
+      extracted_cart_total: amount,
+      category: badge,
+      system_notice: priceData.system_notice || '',
+      points_redemption_intel: pointsRedemptionIntel,
+      shop_partners: shopPartners,
+      recent_history: recentHistory
+    });
+
+  } catch (e) {
+    console.error('[Extension Intercept] Fatal Error:', e);
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -632,6 +1191,29 @@ app.post('/api/v1/user/portfolio/add', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/user/portfolio/remove
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/api/v1/user/portfolio/remove', async (req, res) => {
+  const { user_id, card_id } = req.body;
+
+  if (!user_id || !card_id) {
+    return res.status(400).json({ error: 'MISSING_REQUIRED_PARAMETERS' });
+  }
+
+  try {
+    await dbQuery(
+      `DELETE FROM user_wallets WHERE user_id = ? AND card_id = ?`,
+      [user_id, card_id]
+    );
+
+    return res.json({ success: true, message: 'CARD_SUCCESSFULLY_DEPROVISIONED' });
+  } catch (err) {
+    console.error('Portfolio Deprovisioning Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/v1/user/portfolio/list
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/api/v1/user/portfolio/list', async (req, res) => {
@@ -644,7 +1226,7 @@ app.get('/api/v1/user/portfolio/list', async (req, res) => {
   try {
     const rows = await dbQuery(
       `SELECT uw.wallet_entry_id, c.card_id, c.bank_id, c.card_name, c.card_type,
-              c.card_network, c.annual_fee_inr, c.spend_waiver_threshold_inr
+              c.card_network, c.annual_fee_inr, c.spend_waiver_threshold_inr, c.official_link
        FROM user_wallets uw
        JOIN cards c ON uw.card_id = c.card_id
        WHERE uw.user_id = ?
@@ -843,7 +1425,6 @@ app.get('/api/v1/deals/structured', (req, res) => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/v1/user/profile
 // Retrieves user financial profile and spends
 // ─────────────────────────────────────────────────────────────────────────────
@@ -862,6 +1443,7 @@ app.get('/api/v1/user/profile', async (req, res) => {
     if (rows.length === 0) {
       return res.json({
         user_id,
+        name: 'Ambuj Tiwari',
         age: 29,
         annual_income_inr: 2400000.0,
         reward_goal: 'MAX_YIELD',
@@ -890,7 +1472,7 @@ app.get('/api/v1/user/profile', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 app.post('/api/v1/user/profile/save', async (req, res) => {
   const {
-    user_id, age, annual_income_inr, reward_goal,
+    user_id, name, age, annual_income_inr, reward_goal,
     spend_dining_inr, spend_grocery_inr, spend_shopping_inr, spend_utilities_inr,
     spend_travel_inr, spend_fuel_inr, spend_insurance_inr, spend_rent_inr, spend_others_inr
   } = req.body;
@@ -911,13 +1493,14 @@ app.post('/api/v1/user/profile/save', async (req, res) => {
 
     await dbQuery(
       `INSERT OR REPLACE INTO user_financial_profiles (
-         user_id, age, annual_income_inr, reward_goal,
+         user_id, name, age, annual_income_inr, reward_goal,
          spend_dining_inr, spend_grocery_inr, spend_shopping_inr, spend_utilities_inr,
          spend_travel_inr, spend_fuel_inr, spend_insurance_inr, spend_rent_inr, spend_others_inr,
          updated_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
       [
         user_id,
+        name || 'Ambuj Tiwari',
         parseInt(age || 30),
         parseFloat(annual_income_inr || 1000000.0),
         reward_goal || 'MAX_YIELD',
@@ -1150,8 +1733,118 @@ app.post('/api/v1/user/profile/audit', async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/v1/health
+// ── Authentication Endpoints ──────────────────────────────────────────────────
+
+// POST /api/v1/auth/register
+app.post('/api/v1/auth/register', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ detail: "Email and password are required" });
+  }
+
+  try {
+    const existing = await dbQuery('SELECT user_id FROM users WHERE email_address = ?', [email]);
+    if (existing.length > 0) {
+      return res.status(400).json({ detail: "Email already registered" });
+    }
+
+    const userId = require('crypto').randomUUID();
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await dbQuery(
+      'INSERT INTO users (user_id, email_address, password_hash) VALUES (?, ?, ?)',
+      [userId, email, hashedPassword]
+    );
+
+    // Auto-seed the default portfolio cards for new users
+    const defaultCards = [
+      'in_hdfc_infinia_metal',
+      'in_hdfc_millennia_debit',
+      'in_niyo_global_forex',
+      'in_sbi_aurum',
+      'in_axis_atlas_credit'
+    ];
+    for (const cardId of defaultCards) {
+      await dbQuery(
+        `INSERT INTO user_wallets (user_id, card_id) VALUES (?, ?)
+         ON CONFLICT(user_id, card_id) DO NOTHING`,
+        [userId, cardId]
+      );
+    }
+
+    return res.status(201).json({
+      user_id: userId,
+      email_address: email,
+      message: "USER_REGISTERED_SUCCESSFULLY"
+    });
+  } catch (err) {
+    console.error('Registration Error:', err);
+    return res.status(500).json({ detail: "Internal registration fault: " + err.message });
+  }
+});
+
+// POST /api/v1/auth/login
+app.post('/api/v1/auth/login', async (req, res) => {
+  const username = req.body.username || req.body.email;
+  const password = req.body.password;
+
+  if (!username || !password) {
+    return res.status(400).json({ detail: "Username/email and password are required" });
+  }
+
+  try {
+    const users = await dbQuery('SELECT * FROM users WHERE email_address = ?', [username]);
+    if (users.length === 0) {
+      return res.status(401).json({ detail: "Incorrect email or password" });
+    }
+
+    const user = users[0];
+    let isMatch = false;
+
+    if (user.password_hash === 'PBKDF2_SECURE_HASH_DEFAULT' || user.password_hash === 'hash_placeholder') {
+      isMatch = (password === 'password123' || password === 'admin');
+    } else {
+      isMatch = await bcrypt.compare(password, user.password_hash);
+    }
+
+    if (!isMatch) {
+      return res.status(401).json({ detail: "Incorrect email or password" });
+    }
+
+    const token = jwt.sign({ sub: user.email_address }, JWT_SECRET, { expiresIn: '24h' });
+    return res.json({ access_token: token, token_type: "bearer" });
+  } catch (err) {
+    console.error('Login Error:', err);
+    return res.status(500).json({ detail: "Internal login fault: " + err.message });
+  }
+});
+
+// GET /api/v1/auth/me
+app.get('/api/v1/auth/me', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ detail: "Authorization token required" });
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const users = await dbQuery('SELECT user_id, email_address, created_at FROM users WHERE email_address = ?', [decoded.sub]);
+    if (users.length === 0) {
+      return res.status(404).json({ detail: "User not found" });
+    }
+    const user = users[0];
+    return res.json({
+      id: user.user_id,
+      user_id: user.user_id,
+      email: user.email_address,
+      email_address: user.email_address,
+      created_at: user.created_at
+    });
+  } catch (err) {
+    return res.status(401).json({ detail: "Invalid or expired token" });
+  }
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/v1/health

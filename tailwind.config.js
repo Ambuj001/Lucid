@@ -29,7 +29,8 @@ module.exports = {
         'glow-lg': '0 0 120px rgba(99,102,241,0.2)',
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Satoshi', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['"Cabinet Grotesk"', 'sans-serif'],
       },
       keyframes: {
         'fade-in-up': {
