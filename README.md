@@ -1,63 +1,76 @@
-# Cardwise Core Credit Card Optimization Engine
+# CardWise AI — Complete System
 
-Cardwise is a high-performance credit and debit card reward yield optimization platform tailored for Indian financial instruments. This repository contains the core onboarding, data extraction, MCC resolution, ledger optimization, and backend API structures.
-
-## 🚀 Key Capabilities
-
-- **Onboarding Engine**: Compiles credit/debit card profiles, including fees, waiver thresholds, category-specific exclusions, and lounge access quotas.
-- **T&C Change Monitor**: Parses unstructured PDF/Web documents using the Gemini API to detect devaluations, warning traps, and revised multipliers.
-- **MCC Domain Resolution**: Matches domain inputs (e.g., `zomato.com` or government portals) to standard ISO 18245 Merchant Category Codes and calculates checkout surcharges.
-- **Ledger Optimization & Recommendations**: Evaluates user wallets dynamically to recommend the optimal card to maximize yield at checkout.
-- **Stark Design System Layouts**: Includes Tailwind configuration and responsive React components built with zero rounded borders for a minimalist aesthetic.
+## 🚀 Quick Start (3 PowerShell windows)
 
 ---
 
-## 📁 Repository Structure
-
+### Window 1 — Backend API
+```powershell
+cd C:\Users\ujjaw\OneDrive\Desktop\extension\cardwise-api
+docker-compose up -d
+python -m pip install -r requirements.txt
+python seed.py
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
-├── .github/workflows/
-│   └── ci.yml                     # Continuous Integration workflow
-├── components/
-│   └── WalletDeckComponent.tsx     # Stark/Pink theme portfolio UI component
-├── database.py                     # SQLite interface for extraction monitors
-├── init_db.py                      # Local SQLite database initialization script
-├── ledger_optimization.py          # Ledger tracking & reward analytics database
-├── main.py                         # Offline pipeline CLI tester
-├── mcc_resolution.py               # Domain-to-MCC mapper & caching module
-├── pipeline.py                     # Gemini API document parsing pipeline
-├── schema.sql                      # Production PostgreSQL database schema
-├── server.js                       # Express.js REST API for yield recommendations
-├── tailwind.config.js              # Theme and border purges
-└── .gitignore                      # Git path exclusions
-```
+→ API at http://localhost:8000
+→ Swagger docs at http://localhost:8000/docs
 
 ---
 
-## 🛠️ Getting Started
-
-### 1. Database Setup
-To initialize the local SQLite database for development, run:
-```bash
-python3 init_db.py
+### Window 2 — Dashboard
+```powershell
+cd C:\Users\ujjaw\OneDrive\Desktop\extension\cardwise-dashboard
+npm run dev
 ```
-For production PostgreSQL environments, execute the DDL queries inside `schema.sql` against your instance.
-
-### 2. Run the Express Backend Server
-Install dependencies and launch the API server:
-```bash
-npm install express pg
-node server.js
-```
-The server will run on port `3000` (or `process.env.PORT`).
-
-### 3. Run a Document Analysis CLI Test
-Set your Gemini API key and run the pipeline driver:
-```bash
-export GEMINI_API_KEY="your-key-here"
-python3 main.py
-```
+→ Dashboard at http://localhost:3000
 
 ---
 
-## 🧪 Continuous Integration
-Every push or pull request to the `main` branch triggers the **Cardwise CI Pipeline** (`.github/workflows/ci.yml`), which automatically runs syntax checks and dependency checks for both the Node.js API and Python components.
+### Window 3 — Extension
+1. Open Chrome → `chrome://extensions`
+2. Enable **Developer Mode** (top right)
+3. Click **Load unpacked**
+4. Select folder: `C:\Users\ujjaw\OneDrive\Desktop\extension\cardwise-extension`
+
+---
+
+## 🧪 Test the Full Flow
+
+1. Open http://localhost:3000 → Register → Add your cards
+2. Go to https://www.amazon.in → search any product → click it
+3. Add to cart → go to cart page
+4. **CardWise AI banner appears at the bottom** with best card recommendation
+
+---
+
+## 📁 Project Structure
+```
+extension/
+├── cardwise-api/           FastAPI Backend + PostgreSQL
+│   ├── main.py
+│   ├── models.py           users, cards, user_wallets, recommendation_logs
+│   ├── routers/
+│   │   ├── auth.py         JWT login/register
+│   │   ├── cards.py        wallet CRUD
+│   │   └── engine.py       9-Step Recommendation Engine
+│   ├── seed.py             8 Indian credit cards
+│   └── docker-compose.yml  PostgreSQL
+│
+├── cardwise-dashboard/     Next.js 14 Web App
+│   └── src/app/
+│       ├── page.tsx        Landing page
+│       ├── login/          Auth page
+│       └── dashboard/      Wallet + History
+│
+└── cardwise-extension/     Chrome MV3 Extension
+    ├── manifest.json
+    ├── background.js       JWT + API bridge
+    ├── content_script.js   Checkout detection + Shadow DOM banner
+    └── popup/              Login/Wallet popup
+```
+
+## 🎨 Design System
+- Background: `#000000` / `#080808`
+- Accent: `#FF2E93` (pink)
+- Text: `#FFFFFF`
+- Border-radius: `0px` (sharp edges)
