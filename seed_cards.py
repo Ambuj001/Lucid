@@ -44,7 +44,21 @@ BANK_DATA = [
     ("FEDERAL", "Federal Bank", "1800-425-1199", "contact@federalbank.co.in"),
     ("IDBI", "IDBI Bank", "1800-209-4324", "customercare@idbi.co.in"),
     ("UCO", "UCO Bank", "1800-103-0123", "hopgr.calcutta@ucobank.co.in"),
-    ("IOB", "Indian Overseas Bank", "1800-425-4445", "complaints@iob.in")
+    ("IOB", "Indian Overseas Bank", "1800-425-4445", "complaints@iob.in"),
+
+    # ── Crypto Exchange Card Issuers (Global) ──────────────────────────────────
+    ("CRYPTOCOM", "Crypto.com / Foris DAX", "+1-888-327-4797", "support@crypto.com"),
+    ("COINBASE", "Coinbase Global Inc.", "+1-888-908-7930", "support@coinbase.com"),
+    ("NEXO", "Nexo Finance Ltd.", "+44-800-098-8131", "support@nexo.io"),
+    ("GEMINI", "Gemini Trust Company LLC", "+1-833-436-4846", "support@gemini.com"),
+    ("BINANCE", "Binance Holdings Ltd.", "N/A", "support@binance.com"),
+    ("BYBIT", "Bybit Fintech Ltd.", "+1-800-492-4892", "support@bybit.com"),
+    ("OKX", "OKX (OKX Technology Inc.)", "N/A", "support@okx.com"),
+    ("KRAKEN", "Payward Inc. (Kraken)", "+1-833-203-0279", "support@kraken.com"),
+    ("BITPAY", "BitPay Inc.", "+1-404-969-8289", "support@bitpay.com"),
+    ("WIREX", "Wirex Ltd.", "+44-20-3695-0090", "support@wirexapp.com"),
+    ("ETHERFI", "ether.fi Foundation", "N/A", "support@ether.fi"),
+    ("METAMASK", "MetaMask / Consensys", "N/A", "support@metamask.io")
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -240,7 +254,55 @@ CARDS_DATA = [
     ("in_federal_rupay_select_debit", "FEDERAL", "Federal Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
     ("in_idbi_rupay_select_debit", "IDBI", "IDBI Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
     ("in_uco_rupay_select_debit", "UCO", "UCO Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
-    ("in_iob_rupay_select_debit", "IOB", "Indian Overseas Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0)
+    ("in_iob_rupay_select_debit", "IOB", "Indian Overseas Bank RuPay Select Debit", "DEBIT", "RUPAY", 0, 300, 0),
+
+    # ── Crypto.com Visa Cards (Global, 5 Tiers) ────────────────────────────────
+    # All require CRO token staking to unlock respective tier
+    ("gl_cryptocom_midnight_blue", "CRYPTOCOM", "Crypto.com Midnight Blue Visa", "DEBIT", "VISA", 0, 0, 0),
+    ("gl_cryptocom_ruby_steel", "CRYPTOCOM", "Crypto.com Ruby Steel Visa", "DEBIT", "VISA", 0, 0, 0),
+    ("gl_cryptocom_royal_indigo", "CRYPTOCOM", "Crypto.com Royal Indigo Visa", "DEBIT", "VISA", 0, 0, 0),
+    ("gl_cryptocom_frosted_rose_gold", "CRYPTOCOM", "Crypto.com Frosted Rose Gold Visa", "DEBIT", "VISA", 0, 0, 0),
+    ("gl_cryptocom_obsidian", "CRYPTOCOM", "Crypto.com Obsidian Visa", "DEBIT", "VISA", 0, 0, 0),
+
+    # ── Coinbase Cards ────────────────────────────────────────────────────────
+    ("gl_coinbase_one_card", "COINBASE", "Coinbase One Visa Card", "CREDIT", "VISA", 0, 0, 0),
+    ("gl_coinbase_card_debit", "COINBASE", "Coinbase Visa Debit Card", "DEBIT", "VISA", 0, 0, 0),
+
+    # ── Nexo Cards ────────────────────────────────────────────────────────────
+    ("gl_nexo_platinum", "NEXO", "Nexo Platinum Card (Mastercard)", "CREDIT", "MASTERCARD", 0, 0, 0),
+    ("gl_nexo_gold", "NEXO", "Nexo Gold Card (Mastercard)", "CREDIT", "MASTERCARD", 0, 0, 0),
+    ("gl_nexo_silver", "NEXO", "Nexo Silver Card (Mastercard)", "CREDIT", "MASTERCARD", 0, 0, 0),
+
+    # ── Gemini Cards ────────────────────────────────────────────────────────
+    ("gl_gemini_credit", "GEMINI", "Gemini Credit Card (Mastercard)", "CREDIT", "MASTERCARD", 0, 0, 0),
+
+    # ── Binance Cards ────────────────────────────────────────────────────────
+    ("gl_binance_visa_debit", "BINANCE", "Binance Visa Debit Card", "DEBIT", "VISA", 0, 0, 0),
+
+    # ── Bybit Cards ────────────────────────────────────────────────────────
+    ("gl_bybit_visa_debit", "BYBIT", "Bybit Visa Debit Card", "DEBIT", "VISA", 0, 0, 0),
+
+    # ── OKX Cards ────────────────────────────────────────────────────────
+    ("gl_okx_visa_debit", "OKX", "OKX Visa Debit Card", "DEBIT", "VISA", 0, 0, 0),
+
+    # ── Kraken Cards ────────────────────────────────────────────────────────
+    ("gl_kraken_visa_debit", "KRAKEN", "Kraken Visa Debit Card", "DEBIT", "VISA", 0, 0, 0),
+
+    # ── BitPay Cards ────────────────────────────────────────────────────────
+    ("gl_bitpay_visa_debit", "BITPAY", "BitPay Visa Prepaid Debit Card", "DEBIT", "VISA", 0, 0, 0),
+    ("gl_bitpay_mastercard_debit", "BITPAY", "BitPay Mastercard Prepaid Debit Card", "DEBIT", "MASTERCARD", 0, 0, 0),
+
+    # ── Wirex Cards ────────────────────────────────────────────────────────
+    ("gl_wirex_elite", "WIREX", "Wirex Elite Visa Card", "DEBIT", "VISA", 0, 0, 0),
+    ("gl_wirex_premium", "WIREX", "Wirex Premium Visa Card", "DEBIT", "VISA", 0, 0, 0),
+    ("gl_wirex_standard", "WIREX", "Wirex Standard Visa Card", "DEBIT", "VISA", 0, 0, 0),
+
+    # ── ether.fi Cash Cards (DeFi-native) ─────────────────────────────────
+    ("gl_etherfi_cash_black", "ETHERFI", "ether.fi Cash Black Card (Visa)", "CREDIT", "VISA", 0, 0, 0),
+    ("gl_etherfi_cash_white", "ETHERFI", "ether.fi Cash White Card (Visa)", "CREDIT", "VISA", 0, 0, 0),
+
+    # ── MetaMask Card ─────────────────────────────────────────────────────
+    ("gl_metamask_card", "METAMASK", "MetaMask Mastercard Debit Card", "DEBIT", "MASTERCARD", 0, 0, 0)
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -571,7 +633,140 @@ REWARD_RULES = [
 
     # Indian Overseas Bank RuPay Select Debit
     ("in_iob_rupay_select_debit", "DEFAULT", 0, 0.25, None, "1 reward point per Rs.100 spent (0.25% yield).", 0.25),
-    ("in_iob_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25)
+    ("in_iob_rupay_select_debit", "6540", 1, 0, 0, "🚫 Wallet loads excluded.", 0.25),
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # CRYPTO CARD REWARD RULES
+    # Note: All crypto cards use fiat-equivalent USD rewards (converted to INR
+    # equivalent at current rates for comparison). Rewards are paid in crypto.
+    # ──────────────────────────────────────────────────────────────────────────
+
+    # Crypto.com Midnight Blue (Free tier — No CRO stake required)
+    ("gl_cryptocom_midnight_blue", "DEFAULT", 0, 1.0, None, "1% CRO cashback on all purchases. No CRO staking required. Rewards in CRO tokens, redeemable via Crypto.com app.", 1.0),
+    ("gl_cryptocom_midnight_blue", "5812", 0, 1.0, None, "🍔 1% CRO on dining. No premium restaurant perks at this tier.", 1.0),
+    ("gl_cryptocom_midnight_blue", "4511", 0, 1.0, None, "✈️ 1% CRO on travel at base tier. No airport lounge access.", 1.0),
+    ("gl_cryptocom_midnight_blue", "5310", 0, 1.0, None, "💰 1% CRO on shopping. No enhanced merchant benefits.", 1.0),
+
+    # Crypto.com Ruby Steel (Stake $400 CRO)
+    ("gl_cryptocom_ruby_steel", "DEFAULT", 0, 2.0, None, "2% CRO cashback on all eligible purchases. Requires $400 USD equivalent CRO staked for 6 months. Rewards auto-credited weekly in CRO.", 1.0),
+    ("gl_cryptocom_ruby_steel", "5812", 0, 2.0, None, "🍔 2% CRO on dining. Includes complimentary Spotify Premium subscription (~$13.99/mo).", 1.0),
+    ("gl_cryptocom_ruby_steel", "5310", 0, 2.0, None, "💰 2% CRO on shopping and e-commerce.", 1.0),
+    ("gl_cryptocom_ruby_steel", "4511", 0, 2.0, None, "✈️ 2% CRO on airline tickets. No lounge access at Ruby Steel tier.", 1.0),
+
+    # Crypto.com Royal Indigo (Stake $4,000 CRO)
+    ("gl_cryptocom_royal_indigo", "DEFAULT", 0, 3.0, None, "3% CRO cashback on all eligible purchases. Requires $4,000 USD equivalent CRO staked for 6 months. Includes LoungeKey airport access (unlimited).", 1.0),
+    ("gl_cryptocom_royal_indigo", "5812", 0, 3.0, None, "🍔 3% CRO on dining. Complimentary Spotify + Netflix ($15.49/mo) included.", 1.0),
+    ("gl_cryptocom_royal_indigo", "5310", 0, 3.0, None, "💰 3% CRO on all shopping. Airport lounge access included globally.", 1.0),
+    ("gl_cryptocom_royal_indigo", "4511", 0, 3.0, None, "✈️ 3% CRO on flights and hotels. Includes unlimited LoungeKey lounge access globally.", 1.0),
+    ("gl_cryptocom_royal_indigo", "7011", 0, 3.0, None, "🏨 3% CRO on hotel stays.", 1.0),
+
+    # Crypto.com Frosted Rose Gold (Stake $40,000 CRO)
+    ("gl_cryptocom_frosted_rose_gold", "DEFAULT", 0, 5.0, None, "5% CRO cashback on all eligible purchases. Requires $40,000 USD equivalent CRO staked for 6 months. Includes LoungeKey + 10% rebate on Expedia bookings.", 1.0),
+    ("gl_cryptocom_frosted_rose_gold", "5812", 0, 5.0, None, "🍔 5% CRO on dining. Complimentary Spotify + Netflix + Amazon Prime included.", 1.0),
+    ("gl_cryptocom_frosted_rose_gold", "5310", 0, 5.0, None, "💰 5% CRO on shopping. 10% rebate on Airbnb and Expedia bookings.", 1.0),
+    ("gl_cryptocom_frosted_rose_gold", "4511", 0, 5.0, None, "✈️ 5% CRO on flights. Unlimited LoungeKey global lounge access.", 1.0),
+    ("gl_cryptocom_frosted_rose_gold", "7011", 0, 5.0, None, "🏨 5% CRO on hotels. 10% Expedia hotel rebate via CRO.", 1.0),
+
+    # Crypto.com Obsidian (Stake $400,000 CRO — Ultra tier)
+    ("gl_cryptocom_obsidian", "DEFAULT", 0, 8.0, None, "8% CRO cashback on all eligible purchases. Requires $400,000 USD equivalent CRO staked for 6 months. The highest tier Crypto.com card. Includes private airport transfers, dedicated account manager, unlimited LoungeKey.", 1.0),
+    ("gl_cryptocom_obsidian", "5812", 0, 8.0, None, "🍔 8% CRO on dining. Complimentary Spotify + Netflix + Amazon Prime + Expedia Gold status.", 1.0),
+    ("gl_cryptocom_obsidian", "5310", 0, 8.0, None, "💰 8% CRO on all purchases. 10% rebate on Airbnb, Expedia, and crypto.com travel.", 1.0),
+    ("gl_cryptocom_obsidian", "4511", 0, 8.0, None, "✈️ 8% CRO on flights. Unlimited LoungeKey, private jet lounge access, dedicated concierge.", 1.0),
+    ("gl_cryptocom_obsidian", "7011", 0, 8.0, None, "🏨 8% CRO on hotels. Expedia Gold status, 10% rebate.", 1.0),
+
+    # Coinbase One Visa (Credit Card — US)
+    ("gl_coinbase_one_card", "DEFAULT", 0, 2.0, None, "2% flat BTC cashback on all purchases. Requires Coinbase One membership ($29.99/mo). No annual card fee. Rewards directly deposited as Bitcoin to Coinbase wallet weekly.", 1.0),
+    ("gl_coinbase_one_card", "5310", 0, 4.0, None, "💰 4% BTC cashback on select online shopping merchants with Coinbase One membership.", 1.0),
+    ("gl_coinbase_one_card", "4511", 0, 2.0, None, "✈️ 2% BTC on airlines and travel bookings.", 1.0),
+    ("gl_coinbase_one_card", "5812", 0, 2.0, None, "🍔 2% BTC on dining and food delivery.", 1.0),
+    ("gl_coinbase_one_card", "6552", 1, 0, 0, "🚫 Rent and P2P payments excluded from BTC rewards.", 1.0),
+
+    # Coinbase Visa Debit
+    ("gl_coinbase_card_debit", "DEFAULT", 0, 1.0, None, "1% BTC, 2% ETH, or 4% XLM/DAI cashback — user selects one asset. Prepaid Visa debit, auto-converts crypto to USD at point of sale. No annual fee.", 1.0),
+    ("gl_coinbase_card_debit", "5310", 0, 1.0, None, "💰 Same base cashback on online shopping. Up to 4% if XLM is selected as rewards currency.", 1.0),
+    ("gl_coinbase_card_debit", "5541", 1, 0, 0, "🚫 Fuel purchases may have variable rates due to authorization holds with crypto auto-conversion.", 1.0),
+
+    # Nexo Platinum Card (Credit against crypto — up to 90% LTV)
+    ("gl_nexo_platinum", "DEFAULT", 0, 2.0, None, "Up to 2% crypto cashback (NEXO tokens). No credit check, no crypto sale — borrows fiat against collateral. 0% interest for 10 months if ≥10% portfolio is NEXO tokens. No annual fee.", 1.0),
+    ("gl_nexo_platinum", "5310", 0, 2.0, None, "💰 2% NEXO rewards on shopping. Premium Platinum tier requires >10% NEXO in portfolio.", 1.0),
+    ("gl_nexo_platinum", "4511", 0, 2.0, None, "✈️ 2% NEXO rewards on travel. Includes complimentary airport lounge access (Priority Pass, up to 4 visits/year).", 1.0),
+    ("gl_nexo_platinum", "5812", 0, 2.0, None, "🍔 2% NEXO cashback on dining spends.", 1.0),
+    ("gl_nexo_platinum", "6540", 1, 0, 0, "🚫 Crypto-to-crypto wallet transfers and top-ups excluded from rewards.", 1.0),
+
+    # Nexo Gold Card (Crypto-backed credit)
+    ("gl_nexo_gold", "DEFAULT", 0, 1.5, None, "1.5% NEXO token cashback on all purchases. Crypto-backed line of credit — spend without selling your crypto. 6.9% annual interest on outstanding balance. No credit check needed.", 1.0),
+    ("gl_nexo_gold", "5310", 0, 1.5, None, "💰 1.5% NEXO on shopping. Gold tier requires 5–10% NEXO in portfolio.", 1.0),
+    ("gl_nexo_gold", "4511", 0, 1.5, None, "✈️ 1.5% NEXO on travel spends.", 1.0),
+
+    # Nexo Silver Card
+    ("gl_nexo_silver", "DEFAULT", 0, 0.5, None, "0.5% NEXO token cashback on all purchases. Crypto-backed line of credit. Base tier requiring no NEXO holdings. Interest rate 13.9% APR on balance.", 1.0),
+    ("gl_nexo_silver", "5310", 0, 0.5, None, "💰 0.5% NEXO on shopping at Silver tier.", 1.0),
+
+    # Gemini Credit Card (Mastercard — US)
+    ("gl_gemini_credit", "DEFAULT", 0, 1.0, None, "1% crypto cashback on all purchases. No annual fee. Choose rewards in BTC, ETH, or 60+ other cryptos. Rewards credited instantly after every transaction.", 1.0),
+    ("gl_gemini_credit", "5812", 0, 3.0, None, "🍔 3% crypto cashback on dining and restaurants — highest rate in this category. Instant daily reward crediting.", 1.0),
+    ("gl_gemini_credit", "5310", 0, 2.0, None, "💰 2% crypto cashback on online grocery and shopping.", 1.0),
+    ("gl_gemini_credit", "4511", 0, 1.0, None, "✈️ 1% crypto on travel spends.", 1.0),
+    ("gl_gemini_credit", "6552", 1, 0, 0, "🚫 Cash advances and P2P payments earn no crypto rewards.", 1.0),
+
+    # Binance Visa Debit (Global)
+    ("gl_binance_visa_debit", "DEFAULT", 0, 8.0, 100.0, "Up to 8% BNB cashback on all purchases. Cashback tiered by BNB holdings (0.1 BNB = 1%, 1 BNB = 2%, 5 BNB = 3%, 10 BNB = 5%, 30 BNB = 8%). Monthly cap ~$100 USD. Real-time auto-convert crypto to fiat at POS.", 1.0),
+    ("gl_binance_visa_debit", "5310", 0, 8.0, 100.0, "💰 Up to 8% BNB on shopping depending on BNB tier level.", 1.0),
+    ("gl_binance_visa_debit", "5812", 0, 8.0, 100.0, "🍔 Up to 8% BNB on dining spends.", 1.0),
+    ("gl_binance_visa_debit", "5541", 1, 0, 0, "🚫 Fuel station transactions may not support crypto auto-conversion reliably. Excluded from cashback.", 1.0),
+
+    # Bybit Visa Debit (Global)
+    ("gl_bybit_visa_debit", "DEFAULT", 0, 10.0, 100.0, "Up to 10% BIT token cashback on purchases. Tiered by BIT holdings: 100 BIT = 2%, 500 BIT = 5%, 2,000 BIT = 8%, 10,000 BIT = 10%. Monthly cap $100 USD. Real-time crypto-to-fiat conversion at POS.", 1.0),
+    ("gl_bybit_visa_debit", "5310", 0, 10.0, 100.0, "💰 Up to 10% BIT on shopping at top tier.", 1.0),
+    ("gl_bybit_visa_debit", "5812", 0, 10.0, 100.0, "🍔 Up to 10% BIT on dining at top tier.", 1.0),
+
+    # OKX Visa Debit
+    ("gl_okx_visa_debit", "DEFAULT", 0, 3.0, 50.0, "Up to 3% OKB token cashback on all purchases. Tiered by OKB staking level. Monthly reward cap ~$50 USD. Auto-converts crypto at POS via Mastercard/Visa rails. Zero forex markup on international transactions.", 1.0),
+    ("gl_okx_visa_debit", "5310", 0, 3.0, 50.0, "💰 3% OKB on shopping at max tier.", 1.0),
+    ("gl_okx_visa_debit", "4511", 0, 3.0, 50.0, "✈️ 3% OKB on travel. Zero forex markup globally.", 1.0),
+
+    # Kraken Visa Debit (EU/UK)
+    ("gl_kraken_visa_debit", "DEFAULT", 0, 1.0, None, "Flat 1% crypto cashback on all purchases. No staking required. Choose from BTC, ETH, SOL, or 50+ supported assets as reward currency. No annual fee. Instant automatic crypto purchase from spending rewards.", 1.0),
+    ("gl_kraken_visa_debit", "5812", 0, 1.0, None, "🍔 1% crypto on dining (uniform rate).", 1.0),
+    ("gl_kraken_visa_debit", "5310", 0, 1.0, None, "💰 1% crypto on shopping (uniform rate across all categories).", 1.0),
+
+    # BitPay Visa Prepaid Debit
+    ("gl_bitpay_visa_debit", "DEFAULT", 0, 0.0, None, "No cashback rewards. Spend BTC, ETH, XRP, DOGE, and 15+ other cryptos anywhere Visa is accepted. Real-time market rate conversion with 1% crypto-to-USD spread. No monthly fees. Virtual card available instantly.", 1.0),
+    ("gl_bitpay_visa_debit", "5310", 0, 0.0, None, "💰 No rewards on shopping, but allows direct crypto spending without selling on exchange first.", 1.0),
+
+    # BitPay Mastercard Prepaid Debit
+    ("gl_bitpay_mastercard_debit", "DEFAULT", 0, 0.0, None, "No cashback rewards. Same feature set as BitPay Visa — spend 15+ cryptocurrencies at any Mastercard-accepting merchant globally. Auto-converts at live rate. Best for spending altcoins with wide merchant acceptance.", 1.0),
+
+    # Wirex Elite Visa
+    ("gl_wirex_elite", "DEFAULT", 0, 8.0, None, "Up to 8% Cryptoback™ in WXT (Wirex Token) on all purchases. Elite tier requires holding ≥500,000 WXT. Zero foreign exchange fees globally. Includes unlimited fee-free ATM withdrawals (up to $1,000/mo).", 1.0),
+    ("gl_wirex_elite", "5310", 0, 8.0, None, "💰 8% WXT Cryptoback on all in-store/online shopping.", 1.0),
+    ("gl_wirex_elite", "4511", 0, 8.0, None, "✈️ 8% WXT Cryptoback on travel. Zero FX fee is a key benefit for international travel.", 1.0),
+    ("gl_wirex_elite", "5812", 0, 8.0, None, "🍔 8% WXT Cryptoback on dining worldwide.", 1.0),
+
+    # Wirex Premium Visa
+    ("gl_wirex_premium", "DEFAULT", 0, 3.0, None, "3% Cryptoback™ in WXT on all purchases. Premium tier requires holding ≥50,000 WXT. Zero foreign exchange fees globally. Up to $500/mo fee-free ATM withdrawals.", 1.0),
+    ("gl_wirex_premium", "5310", 0, 3.0, None, "💰 3% WXT Cryptoback on shopping.", 1.0),
+    ("gl_wirex_premium", "4511", 0, 3.0, None, "✈️ 3% WXT Cryptoback on travel spends.", 1.0),
+
+    # Wirex Standard Visa
+    ("gl_wirex_standard", "DEFAULT", 0, 0.5, None, "0.5% Cryptoback™ in WXT on in-store purchases. Standard entry-level tier with no WXT holding requirement. Zero fees on first $400/month of currency exchange.", 1.0),
+    ("gl_wirex_standard", "5310", 0, 0.5, None, "💰 0.5% WXT on shopping at standard tier.", 1.0),
+
+    # ether.fi Cash Black (DeFi-native credit card)
+    ("gl_etherfi_cash_black", "DEFAULT", 0, 3.0, None, "3% ETH cashback on all purchases. No credit check, no KYC required. Spend directly from your DeFi wallet without bridging to centralized exchange. Non-custodial design — you control private keys. Instant 3% ETH reward per transaction.", 1.0),
+    ("gl_etherfi_cash_black", "5310", 0, 3.0, None, "💰 3% ETH on all online and in-store shopping.", 1.0),
+    ("gl_etherfi_cash_black", "4511", 0, 3.0, None, "✈️ 3% ETH on travel and airline bookings.", 1.0),
+    ("gl_etherfi_cash_black", "5812", 0, 3.0, None, "🍔 3% ETH cashback on dining and food delivery.", 1.0),
+    ("gl_etherfi_cash_black", "7011", 0, 3.0, None, "🏨 3% ETH on hotel stays. No geographic restrictions for DeFi wallet holders.", 1.0),
+
+    # ether.fi Cash White (Entry DeFi card)
+    ("gl_etherfi_cash_white", "DEFAULT", 0, 1.0, None, "1% ETH cashback on all purchases. Entry-level ether.fi Cash card. Same non-custodial DeFi architecture — no CEX account required. Spend from self-custodial wallet globally.", 1.0),
+    ("gl_etherfi_cash_white", "5310", 0, 1.0, None, "💰 1% ETH on shopping.", 1.0),
+
+    # MetaMask Mastercard Debit
+    ("gl_metamask_card", "DEFAULT", 0, 0.0, None, "No cashback rewards. Spend directly from your MetaMask wallet (ETH, ERC-20 tokens) anywhere Mastercard is accepted. Auto-converts tokens to fiat at POS via Sardine integration. No additional account or KYC beyond MetaMask wallet verification.", 1.0),
+    ("gl_metamask_card", "5310", 0, 0.0, None, "💰 No reward scheme, but enables direct Web3 wallet spending for DeFi-native users.", 1.0),
+    ("gl_metamask_card", "5541", 1, 0, 0, "🚫 High volatility assets may cause authorization failures at fuel pumps due to pre-authorization holds.", 1.0)
 ]
 
 # Populate sensible defaults dynamically for any card that does not have an explicit rules record.
@@ -654,7 +849,54 @@ def seed():
         "in_axis_magnus_credit": "https://www.axisbank.com/retail/cards/credit-card/magnus-credit-card/features-benefits",
         "in_axis_atlas_credit": "https://www.axisbank.com/retail/cards/credit-card/axis-bank-atlas-credit-card/features-benefits",
         "in_axis_ace_credit": "https://www.axisbank.com/retail/cards/credit-card/ace-credit-card/features-benefits",
-        "in_axis_flipkart_credit": "https://www.axisbank.com/retail/cards/credit-card/flipkart-axisbank-creditcard/features-benefits"
+        "in_axis_flipkart_credit": "https://www.axisbank.com/retail/cards/credit-card/flipkart-axisbank-creditcard/features-benefits",
+
+        # Crypto.com Cards
+        "gl_cryptocom_midnight_blue": "https://crypto.com/cards",
+        "gl_cryptocom_ruby_steel": "https://crypto.com/cards",
+        "gl_cryptocom_royal_indigo": "https://crypto.com/cards",
+        "gl_cryptocom_frosted_rose_gold": "https://crypto.com/cards",
+        "gl_cryptocom_obsidian": "https://crypto.com/cards",
+
+        # Coinbase Cards
+        "gl_coinbase_one_card": "https://www.coinbase.com/card",
+        "gl_coinbase_card_debit": "https://www.coinbase.com/card",
+
+        # Nexo Cards
+        "gl_nexo_platinum": "https://nexo.com/nexo-card",
+        "gl_nexo_gold": "https://nexo.com/nexo-card",
+        "gl_nexo_silver": "https://nexo.com/nexo-card",
+
+        # Gemini Card
+        "gl_gemini_credit": "https://www.gemini.com/credit-card",
+
+        # Binance Card
+        "gl_binance_visa_debit": "https://www.binance.com/en/cards",
+
+        # Bybit Card
+        "gl_bybit_visa_debit": "https://www.bybit.com/en/bybit-card",
+
+        # OKX Card
+        "gl_okx_visa_debit": "https://www.okx.com/defi/card",
+
+        # Kraken Card
+        "gl_kraken_visa_debit": "https://www.kraken.com/features/visa-debit-card",
+
+        # BitPay Cards
+        "gl_bitpay_visa_debit": "https://bitpay.com/card",
+        "gl_bitpay_mastercard_debit": "https://bitpay.com/card",
+
+        # Wirex Cards
+        "gl_wirex_elite": "https://wirexapp.com/card",
+        "gl_wirex_premium": "https://wirexapp.com/card",
+        "gl_wirex_standard": "https://wirexapp.com/card",
+
+        # ether.fi Cards
+        "gl_etherfi_cash_black": "https://cash.ether.fi",
+        "gl_etherfi_cash_white": "https://cash.ether.fi",
+
+        # MetaMask Card
+        "gl_metamask_card": "https://portfolio.metamask.io/card"
     }
     for card_id, link in premium_card_links.items():
         cursor.execute("UPDATE cards SET official_link = ? WHERE card_id = ?", (link, card_id))
